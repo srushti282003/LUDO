@@ -1,21 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>React Dice Roller</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
     .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; width: 300px; }
     .dice { font-size: 4rem; margin: 1rem 0; min-height: 80px; display: flex; justify-content: center; align-items: center; }
     .rolling-animation { animation: shake 0.4s infinite; }
     @keyframes shake {
-      0% { transform: translate(1px, 1px) rotate(0deg); }
-      25% { transform: translate(-1px, -2px) rotate(-5deg); }
-      50% { transform: translate(-3px, 0px) rotate(5deg); }
-      75% { transform: translate(3px, 2px) rotate(0deg); }
+      0%   { transform: translate(1px, 1px) rotate(0deg); }
+      25%  { transform: translate(-1px, -2px) rotate(-5deg); }
+      50%  { transform: translate(-3px, 0px) rotate(5deg); }
+      75%  { transform: translate(3px, 2px) rotate(0deg); }
       100% { transform: translate(1px, -1px) rotate(-5deg); }
     }
     button { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 1.2rem; border-radius: 6px; cursor: pointer; transition: 0.2s; }
@@ -26,83 +24,9 @@
     .p1 { background: #e3f2fd; color: #1976d2; }
     .p2 { background: #fce4ec; color: #c2185b; }
   </style>
+  <script type="module" crossorigin src="/assets/index-B3DbwJUH.js"></script>
 </head>
 <body>
   <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    const DiceRoller = () => {
-      const [currentPlayer, setCurrentPlayer] = useState(1);
-      const [diceValue, setDiceValue] = useState(1);
-      const [isRolling, setIsRolling] = useState(false);
-      const [message, setMessage] = useState("Roll to start!");
-
-      // Map numbers to dice faces
-      const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-
-      const handleRoll = () => {
-        if (isRolling) return; // Block spam
-
-        setIsRolling(true);
-        setMessage("Rolling...");
-
-        // Visual animation effect
-        let ticks = 0;
-        const spinInterval = setInterval(() => {
-          setDiceValue(Math.floor(Math.random() * 6) + 1);
-          ticks++;
-          // Wait min 800ms
-          if (ticks >= 8) {
-            clearInterval(spinInterval);
-            finishRoll();
-          }
-        }, 100); // 8 ticks * 100ms = 800ms
-      };
-
-      const finishRoll = () => {
-        const finalRoll = Math.floor(Math.random() * 6) + 1;
-        setDiceValue(finalRoll);
-        
-        if (finalRoll === 6) {
-          setMessage(`Player ${currentPlayer} rolled a 6! Extra turn.`);
-          setIsRolling(false);
-          // Do not switch player, they stay
-        } else {
-          setMessage(`Player ${currentPlayer} rolled a ${finalRoll}. Next player's turn.`);
-          // Switch player after a short delay so they can read the message
-          setTimeout(() => {
-            setCurrentPlayer(prev => prev === 1 ? 2 : 1);
-            setMessage(`Player ${currentPlayer === 1 ? 2 : 1}'s turn`);
-            setIsRolling(false);
-          }, 1500);
-        }
-      };
-
-      return (
-        <div className="container">
-          <div className={`player-indicator ${currentPlayer === 1 ? 'p1' : 'p2'}`}>
-            Player {currentPlayer}'s Turn
-          </div>
-          
-          <div className={`dice ${isRolling ? 'rolling-animation' : ''}`}>
-            {diceFaces[diceValue - 1]}
-          </div>
-
-          <button onClick={handleRoll} disabled={isRolling}>
-            {isRolling ? 'Rolling...' : 'Roll Dice'}
-          </button>
-
-          <div className="status">
-            {message}
-          </div>
-        </div>
-      );
-    };
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<DiceRoller />);
-  </script>
 </body>
 </html>
