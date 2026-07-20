@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ludo — Royal Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --walnut-dark:#241611; --walnut:#3a2418; --walnut-light:#5a3826; --felt-line:#6b4630;
+  --cream:#f3e8d3; --cream-dim:#e5d5b8;
+  --gold:#d8ad4d; --gold-bright:#f0c86a;
+  --red:#d94a4a; --red-dark:#a52f2f;
+  --green:#3fa66d; --green-dark:#297849;
+  --yellow:#e0b23a; --yellow-dark:#ad8620;
+  --blue:#3f7fd9; --blue-dark:#2a56a0;
+  --ink:#2a1c12; font-size:16px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; min-height:100vh; font-family:'Nunito', sans-serif; color:var(--cream);
+  display:flex; flex-direction:column; align-items:center; overflow-x:hidden;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(216,173,77,.10), transparent 42%),
+    radial-gradient(circle at 85% 85%, rgba(63,166,109,.10), transparent 42%),
+    radial-gradient(ellipse at 50% -10%, #4a2f1f 0%, var(--walnut) 45%, var(--walnut-dark) 100%);
+  background-attachment:fixed;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; opacity:.08; z-index:0;
+  background-image: repeating-linear-gradient(100deg, #000 0 2px, transparent 2px 40px);
+}
+h1,h2,h3{font-family:'Baloo 2', sans-serif; margin:0;}
+
+/* ---------------- TOP BAR / USER ---------------- */
+.topbar{
+  width:100%; max-width:920px; display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px 6px; position:relative; z-index:2; gap:10px; flex-wrap:wrap;
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand h1{
+  font-size:1.45rem; font-weight:800; letter-spacing:.4px;
+  background:linear-gradient(90deg, var(--gold-bright), #fff8e0, var(--gold-bright));
+  background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:shimmer 4s linear infinite; text-shadow:0 2px 14px rgba(240,200,106,.25);
+}
+/* ---- BRAND LOGO NEON GLOW ---- */
+.brand h1{
+  font-size:1.55rem; font-weight:800; letter-spacing:.6px; position:relative;
+  background:linear-gradient(90deg, #ffd700, #fff8cc, #f0c86a, #fff, #f0c86a, #ffd700);
+  background-size:300% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:shimmer 3s linear infinite;
+  filter:drop-shadow(0 0 8px rgba(240,200,106,.7)) drop-shadow(0 0 18px rgba(240,200,106,.4));
+  text-shadow:none;
+}
+@keyframes shimmer{to{background-position:300% center;}}
+
+/* ---- CANCEL GAME BUTTON ---- */
+.cancel-game-btn{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+  background:linear-gradient(135deg,#a52f2f,#d94a4a); color:#fff;
+  border:none; border-radius:14px; padding:12px 28px;
+  font-family:'Baloo 2'; font-weight:800; font-size:1rem;
+  box-shadow:0 4px 20px rgba(217,74,74,.6), 0 0 0 1px rgba(255,100,100,.3);
+  cursor:pointer; z-index:100; letter-spacing:.5px;
+  animation:pulse-red 2s ease-in-out infinite;
+  transition:.2s;
+}
+.cancel-game-btn:hover{transform:translateX(-50%) scale(1.05); box-shadow:0 6px 28px rgba(217,74,74,.8);}
+@keyframes pulse-red{0%,100%{box-shadow:0 4px 20px rgba(217,74,74,.6),0 0 0 1px rgba(255,100,100,.3);} 50%{box-shadow:0 4px 30px rgba(217,74,74,.9),0 0 0 3px rgba(255,100,100,.15);}}
+.topbar-actions{display:flex; align-items:center; gap:10px;}
+.icon-btn{
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:var(--cream);
+  border-radius:10px; padding:8px 14px; font-family:'Nunito'; font-weight:700; cursor:pointer;
+  font-size:.8rem; transition:.15s;
+}
+.icon-btn:hover{background:rgba(255,255,255,.18); transform:translateY(-1px);}
+.user-chip{
+  display:flex; align-items:center; gap:8px; padding:5px 12px 5px 5px; border-radius:999px;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+}
+.user-avatar{
+  width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-family:'Baloo 2'; font-size:.85rem; color:rgba(0,0,0,.55);
+  box-shadow:inset 0 -3px 5px rgba(0,0,0,.35), inset 0 2px 3px rgba(255,255,255,.4);
+}
+.user-info{line-height:1.15;}
+.user-name{font-weight:800; font-size:.82rem; font-family:'Baloo 2';}
+.user-stats{font-size:.66rem; color:var(--cream-dim);}
+
+/* ---------------- SETUP SCREEN ---------------- */
+.setup-wrap{
+  z-index:2; width:100%; max-width:560px; padding:14px 20px 30px;
+  display:flex; flex-direction:column; gap:16px; align-items:center; animation:fadeIn .5s ease;
+}
+@keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+.setup-card{
+  width:100%; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.12));
+  border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:22px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+.setup-card h2{font-size:1.1rem; color:var(--gold-bright); margin-bottom:14px;}
+.seat-row{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
+  margin-bottom:8px; background:rgba(255,255,255,.04); flex-wrap:wrap;
+}
+.seat-name{font-weight:800; font-family:'Baloo 2'; flex:1; min-width:90px; font-size:.9rem;}
+.seat-swatches{display:flex; gap:6px;}
+.mini-swatch{
+  width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent;
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.35); transition:.15s;
+}
+.mini-swatch.selected{border-color:var(--gold-bright); transform:scale(1.18);}
+.seat-toggle{display:flex; gap:6px;}
+.seg-btn{
+  border:1px solid rgba(255,255,255,.2); background:transparent; color:var(--cream-dim);
+  padding:6px 11px; border-radius:8px; font-weight:700; font-size:.74rem; cursor:pointer; font-family:'Nunito';
+}
+.seg-btn.active{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+.seg-btn.locked{opacity:.5; cursor:not-allowed;}
+.count-row{display:flex; gap:8px; margin-bottom:16px;}
+.count-btn{
+  flex:1; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.04); color:var(--cream); font-family:'Baloo 2'; font-weight:700;
+  font-size:1.1rem; cursor:pointer; transition:.15s;
+}
+.count-btn.active{background:linear-gradient(180deg,var(--gold-bright),var(--gold)); color:var(--ink); box-shadow:0 4px 14px rgba(216,173,77,.4);}
+.start-btn{
+  width:100%; padding:16px; border:none; border-radius:14px; cursor:pointer;
+  font-family:'Baloo 2'; font-weight:700; font-size:1.15rem; letter-spacing:.3px;
+  background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:var(--ink);
+  box-shadow:0 8px 22px rgba(216,173,77,.35), inset 0 1px 0 rgba(255,255,255,.5); transition:.15s;
+}
+.start-btn:hover{transform:translateY(-2px);}
+
+/* ---------------- GAME LAYOUT ---------------- */
+.game-wrap{
+  z-index:2; width:100%; max-width:920px; padding:6px 14px 30px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+.hud{width:100%; max-width:640px; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;}
+.players-strip{display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
+.player-chip{
+  display:flex; align-items:center; gap:7px; padding:6px 10px 6px 6px; border-radius:999px;
+  background:rgba(255,255,255,.05); border:2px solid transparent; transition:.2s; opacity:.55;
+}
+.player-chip.active{
+  opacity:1; border-color:var(--chip-color); background:rgba(255,255,255,.1);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--chip-color) 25%, transparent);
+}
+.player-chip.finished{opacity:.35;}
+.player-avatar{
+  width:26px;height:26px;border-radius:50%; background:var(--chip-color);
+  box-shadow:inset 0 -3px 5px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.5);
+  display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; color:rgba(0,0,0,.5);
+}
+.player-name{font-size:.78rem; font-weight:800; font-family:'Baloo 2';}
+.player-meta{font-size:.65rem; color:var(--cream-dim); font-weight:600;}
+
+/* ---------------- BOARD ---------------- */
+.board-shell{
+  position:relative; width:min(94vw, 560px); aspect-ratio:1/1; border-radius:24px; padding:16px;
+  background:linear-gradient(135deg, #2b1d10, #4a2e1b 40%, #1e130a);
+  box-shadow:0 25px 50px rgba(0,0,0,.6), inset 0 2px 4px rgba(255,255,255,.1);
+  border:2px solid rgba(255,255,255,.05);
+}
+.board{
+  position:relative; width:100%; height:100%; border-radius:12px; overflow:hidden; background:var(--cream);
+  box-shadow:inset 0 0 0 4px rgba(0,0,0,.35), inset 0 4px 15px rgba(0,0,0,.4), 0 10px 20px rgba(0,0,0,.5);
+  display:grid; grid-template-columns:repeat(15,1fr); grid-template-rows:repeat(15,1fr);
+}
+.cell{border:1px solid rgba(0,0,0,.06); position:relative; overflow:hidden;}
+.cell.track{background:var(--cream);}
+.cell.safe::after{content:"★"; display:flex; align-items:center; justify-content:center; height:100%; color:rgba(0,0,0,.28); font-size:.85em;}
+.cell.start-red{background:color-mix(in srgb, var(--red) 22%, var(--cream));}
+.cell.start-green{background:color-mix(in srgb, var(--green) 22%, var(--cream));}
+.cell.start-yellow{background:color-mix(in srgb, var(--yellow) 26%, var(--cream));}
+.cell.start-blue{background:color-mix(in srgb, var(--blue) 22%, var(--cream));}
+.cell.home-red{background:color-mix(in srgb, var(--red) 55%, var(--cream));}
+.cell.home-green{background:color-mix(in srgb, var(--green) 55%, var(--cream));}
+.cell.home-yellow{background:color-mix(in srgb, var(--yellow) 55%, var(--cream));}
+.cell.home-blue{background:color-mix(in srgb, var(--blue) 55%, var(--cream));}
+
+.yard-box{border-radius:16px; position:relative; box-shadow:inset 0 0 0 8px rgba(255,255,255,.6), inset 0 0 0 10px rgba(0,0,0,.15), 0 5px 15px rgba(0,0,0,.2);}
+.yard-box.red{background:radial-gradient(circle at 30% 30%, #ff5252, #cc0000);}
+.yard-box.green{background:radial-gradient(circle at 30% 30%, #4caf50, #007300);}
+.yard-box.yellow{background:radial-gradient(circle at 30% 30%, #ffeb3b, #b29400);}
+.yard-box.blue{background:radial-gradient(circle at 30% 30%, #448aff, #0033cc);}
+.yard-slot{
+  position:absolute; width:22%; height:22%; border-radius:50%; 
+  background:rgba(0,0,0,.25); 
+  box-shadow:inset 0 4px 8px rgba(0,0,0,.6), 0 2px 4px rgba(255,255,255,.3); 
+  transform:translate(-50%,-50%); 
+  border:2px solid rgba(0,0,0,.15);
+}
+.center-svg{position:absolute; inset:0; width:100%; height:100%; filter:drop-shadow(0 4px 6px rgba(0,0,0,.3));}
+
+/* ---------------- TOKENS ---------------- */
+.token-layer{position:absolute; inset:0; pointer-events:none;}
+.token{
+  position:absolute; width:6.8%; height:6.8%; border-radius:50%; transform:translate(-50%,-50%);
+  transition:left .18s cubic-bezier(.4,0,.2,1), top .18s cubic-bezier(.4,0,.2,1), box-shadow .25s;
+  box-shadow:0 4px 8px rgba(0,0,0,.6), inset 0 -4px 6px rgba(0,0,0,.4), inset 0 4px 6px rgba(255,255,255,.6);
+  pointer-events:auto; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  z-index:10; border:1px solid rgba(255,255,255,.2);
+}
+.token::after{content:''; position:absolute; top:12%; left:18%; width:30%; height:30%; background:rgba(255,255,255,.7); border-radius:50%; filter:blur(1px);}
+.token:hover{transform:translate(-50%,-55%) scale(1.15); box-shadow:0 8px 15px rgba(0,0,0,.5), inset 0 -4px 6px rgba(0,0,0,.3), inset 0 4px 6px rgba(255,255,255,.6); z-index:20;}
+.token.red{background:radial-gradient(circle at 35% 28%, #f08787, var(--red) 55%, var(--red-dark));}
+.token.green{background:radial-gradient(circle at 35% 28%, #8fe0b3, var(--green) 55%, var(--green-dark));}
+.token.yellow{background:radial-gradient(circle at 35% 28%, #f5da8c, var(--yellow) 55%, var(--yellow-dark));}
+.token.blue{background:radial-gradient(circle at 35% 28%, #93bdf2, var(--blue) 55%, var(--blue-dark));}
+.token.movable{animation:movablePulse 1s infinite; cursor:pointer; z-index:8;}
+.token.finished{opacity:.9;}
+.token.bouncing{animation:pawnBounce .32s ease !important; z-index:10;}
+.token.capture-flash{animation:captureFlash .55s ease forwards !important; z-index:15;}
+.token.home-glow{animation:homeGlow .75s ease !important; z-index:10;}
+@keyframes movablePulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(240,200,106,.85), 0 0 0 3px rgba(240,200,106,.25), 0 2px 5px rgba(0,0,0,.5); transform:translate(-50%,-50%) scale(1);}
+  50%{box-shadow:0 0 0 8px rgba(240,200,106,0), 0 0 0 3px rgba(240,200,106,.45), 0 2px 5px rgba(0,0,0,.5); transform:translate(-50%,-50%) scale(1.1);}
+}
+@keyframes pawnBounce{
+  0%{transform:translate(-50%,-50%) scale(1);}
+  30%{transform:translate(-50%,-50%) scale(1.3) translateY(-3px);}
+  55%{transform:translate(-50%,-50%) scale(.9);}
+  78%{transform:translate(-50%,-50%) scale(1.08);}
+  100%{transform:translate(-50%,-50%) scale(1);}
+}
+@keyframes captureFlash{
+  0%{transform:translate(-50%,-50%) scale(1); filter:brightness(1); opacity:1;}
+  20%{transform:translate(-50%,-50%) scale(1.4); filter:brightness(2.5);}
+  50%{transform:translate(-50%,-50%) scale(.65); filter:brightness(1.4); box-shadow:0 0 24px rgba(255,50,50,.9);}
+  80%{transform:translate(-50%,-50%) scale(.3); opacity:.35;}
+  100%{transform:translate(-50%,-50%) scale(.15); opacity:0;}
+}
+@keyframes homeGlow{
+  0%{box-shadow:0 0 0 0 rgba(240,200,106,.95), 0 2px 5px rgba(0,0,0,.5);}
+  50%{box-shadow:0 0 22px 12px rgba(240,200,106,.5), 0 2px 5px rgba(0,0,0,.5);}
+  100%{box-shadow:0 0 0 0 rgba(240,200,106,0), 0 2px 5px rgba(0,0,0,.5);}
+}
+
+/* ---------------- FLOATING PER-PLAYER DICE ---------------- */
+.dice{
+  position:absolute;
+  width:clamp(38px, 8vw, 56px); height:clamp(38px, 8vw, 56px);
+  border-radius:14px; cursor:pointer; z-index:20;
+  background:linear-gradient(160deg, #fff, #e7ddc8);
+  box-shadow:0 8px 18px rgba(0,0,0,.45), inset 0 2px 2px #fff, 0 0 0 3px var(--dice-glow, transparent);
+  display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+  padding:clamp(5px, 1.2vw, 9px);
+  transition:left .45s cubic-bezier(.4,0,.2,1), top .45s cubic-bezier(.4,0,.2,1), box-shadow .3s, opacity .3s;
+  transform:translate(-50%,-50%);
+  touch-action:manipulation;
+}
+.dice.rolling{animation:diceShake .5s ease infinite;}
+.dice.disabled{opacity:.45; cursor:not-allowed; pointer-events:none;}
+@keyframes diceShake{
+  0%{transform:translate(-50%,-50%) rotate(0deg);}
+  25%{transform:translate(-50%,-50%) rotate(-18deg) scale(1.05);}
+  50%{transform:translate(-50%,-50%) rotate(14deg) scale(.96);}
+  75%{transform:translate(-50%,-50%) rotate(-8deg) scale(1.04);}
+  100%{transform:translate(-50%,-50%) rotate(0deg);}
+}
+.pip{border-radius:50%; background:var(--ink); align-self:center; justify-self:center; width:60%; height:60%; opacity:0;}
+
+/* ---------------- CONTROLS / STATUS ---------------- */
+.controls{display:flex; align-items:center; justify-content:center; margin-top:2px;}
+.status-line{font-size:.88rem; font-weight:700; color:var(--gold-bright); min-height:1.4em; text-align:center; max-width:340px;}
+
+/* ---------------- MODALS ---------------- */
+.overlay{
+  position:fixed; inset:0; background:rgba(10,6,3,.75); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; animation:fadeIn .3s ease;
+}
+.modal{
+  background:linear-gradient(145deg, rgba(36,22,17,0.9), rgba(20,12,8,0.95));
+  border:1px solid rgba(255,255,255,.1); border-radius:24px; padding:32px; max-width:480px; width:100%; max-height:85vh; overflow:auto;
+  box-shadow:0 30px 60px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.1);
+  backdrop-filter:blur(10px);
+}
+.modal h2{color:var(--gold-bright); margin-bottom:16px; font-size:1.6rem; text-shadow:0 2px 8px rgba(240,200,106,.3);}
+.modal h3{color:var(--gold); font-size:1rem; margin:16px 0 8px; letter-spacing:0.5px;}
+.modal p, .modal li{font-size:.9rem; line-height:1.6; color:var(--cream-dim);}
+.modal ul{padding-left:20px; margin:6px 0;}
+.modal .close-btn, .modal .start-btn{margin-top:20px;}
+.rank-list{list-style:none; padding:0; margin:18px 0;}
+.rank-list li{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(255,255,255,.05); margin-bottom:6px; font-weight:800; font-family:'Baloo 2';}
+.rank-medal{width:24px; text-align:center;}
+.hidden{display:none !important;}
+.footer-note{font-size:.7rem; color:rgba(243,232,211,.35); text-align:center; max-width:500px; margin-top:6px; padding-bottom:8px;}
+
+.trophy-hero{text-align:center; margin-bottom:6px;}
+.trophy-hero .trophy-icon{font-size:3.4rem; display:block; animation:trophyBounce 1s ease infinite;}
+@keyframes trophyBounce{0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-6px) scale(1.06);}}
+#confettiCanvas{position:fixed; inset:0; pointer-events:none; z-index:60;}
+
+/* ---------------- MODE SELECT ---------------- */
+.mode-wrap{
+  z-index:2; width:100%; max-width:600px; padding:20px; display:flex; flex-direction:column;
+  gap:16px; align-items:center; animation:fadeIn .5s ease;
+}
+.mode-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; width:100%;}
+@media (max-width:520px){ .mode-grid{grid-template-columns:1fr;} }
+.mode-card{
+  cursor:pointer; border-radius:18px; padding:24px 20px; text-align:center;
+  background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.15));
+  border:1px solid rgba(255,255,255,.14); transition:.2s; position:relative; overflow:hidden;
+}
+.mode-card:hover{transform:translateY(-4px); border-color:var(--gold); box-shadow:0 14px 30px rgba(0,0,0,.4);}
+.mode-card .mode-icon{font-size:2.6rem; display:block; margin-bottom:10px;}
+.mode-card h3{font-size:1.15rem; color:var(--gold-bright); margin-bottom:6px;}
+.mode-card p{font-size:.8rem; color:var(--cream-dim); line-height:1.4; margin:0;}
+.mode-card.online::before{
+  content:"LIVE"; position:absolute; top:10px; right:-26px; background:var(--green);
+  color:#0c1f14; font-size:.6rem; font-weight:800; padding:3px 30px; transform:rotate(35deg);
+  letter-spacing:1px;
+}
+
+/* ---------------- ONLINE LOBBY ---------------- */
+.lobby-wrap{
+  z-index:2; width:100%; max-width:480px; padding:20px; display:flex; flex-direction:column;
+  gap:16px; align-items:center; animation:fadeIn .5s ease;
+}
+.lobby-card{
+  width:100%; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.12));
+  border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:26px; text-align:center;
+}
+.lobby-card h2{font-size:1.1rem; color:var(--gold-bright); margin-bottom:6px;}
+.lobby-sub{font-size:.82rem; color:var(--cream-dim); margin-bottom:18px;}
+.size-row{display:flex; gap:8px; margin-bottom:20px;}
+.size-btn{
+  flex:1; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.04); color:var(--cream); font-family:'Baloo 2'; font-weight:700;
+  font-size:1.05rem; cursor:pointer; transition:.15s;
+}
+.size-btn.active{background:linear-gradient(180deg,var(--gold-bright),var(--gold)); color:var(--ink); box-shadow:0 4px 14px rgba(216,173,77,.4);}
+.spinner{
+  width:46px; height:46px; margin:6px auto 14px; border-radius:50%;
+  border:4px solid rgba(255,255,255,.15); border-top-color:var(--gold-bright);
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.queue-status{font-size:.88rem; font-weight:700; color:var(--gold-bright); min-height:1.3em; margin-bottom:6px;}
+.queue-eta{font-size:.72rem; color:var(--cream-dim);}
+.back-link{background:none; border:none; color:var(--cream-dim); font-size:.78rem; cursor:pointer; text-decoration:underline; font-family:'Nunito';}
+/* ---- Wallet & Admin ---- */
+.fee-row{display:flex; gap:8px; margin-bottom:20px;}
+.fee-btn{
+  flex:1; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.04); color:var(--cream); font-family:'Baloo 2'; font-weight:700;
+  cursor:pointer; transition:.15s;
+}
+.fee-btn.active{background:linear-gradient(180deg,var(--green),var(--green-dark)); color:#fff; border-color:var(--green-bright);}
+.wallet-balance{font-size:1.8rem; color:var(--gold-bright); font-weight:800; text-align:center; margin-bottom:24px; text-shadow:0 2px 10px rgba(240,200,106,.4);}
+.wallet-forms{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+@media (max-width:600px){.wallet-forms{grid-template-columns:1fr;}}
+.wallet-panel{background:rgba(255,255,255,.03); padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,.08); box-shadow:inset 0 1px 0 rgba(255,255,255,.05);}
+.wallet-panel input[type="number"], .wallet-panel input[type="file"]{
+  width:100%; padding:12px; margin:8px 0 20px; border-radius:10px; border:1px solid rgba(255,255,255,.15);
+  background:rgba(0,0,0,.3); color:#fff; transition:0.2s; font-family:'Nunito'; outline:none;
+}
+.wallet-panel input:focus{border-color:var(--gold); box-shadow:0 0 0 3px rgba(216,173,77,.2);}
+.admin-table{width:100%; border-collapse:collapse; margin-top:10px; font-size:.9rem; background:rgba(0,0,0,.2); border-radius:12px; overflow:hidden;}
+.admin-table th, .admin-table td{padding:12px 16px; text-align:left; border-bottom:1px solid rgba(255,255,255,.05);}
+.admin-table th{color:var(--gold-bright); font-weight:700; background:rgba(255,255,255,.05); text-transform:uppercase; font-size:0.8rem; letter-spacing:0.5px;}
+.admin-table tr:hover td{background:rgba(255,255,255,.03);}
+.admin-btn{background:rgba(217,74,74,.15); color:var(--red); border:1px solid rgba(217,74,74,.4); padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:700; transition:0.2s;}
+.admin-btn:hover{background:var(--red); color:#fff;}
+.admin-btn.approve{background:rgba(63,166,109,.15); color:var(--green); border:1px solid rgba(63,166,109,.4);}
+
+/* ---- Pawn Movement Trail ---- */
+.cell.path-highlight::before{
+  content:""; position:absolute; inset:2px; border-radius:4px;
+  background:rgba(240,200,106,.32);
+  box-shadow:0 0 8px 1px rgba(240,200,106,.45), inset 0 0 5px rgba(240,200,106,.2);
+  animation:trailPulse .35s ease; pointer-events:none; z-index:1;
+}
+@keyframes trailPulse{
+  0%{opacity:0; transform:scale(.4);}
+  60%{opacity:1; transform:scale(1.08);}
+  100%{opacity:1; transform:scale(1);}
+}
+.cell.trail::before{
+  content:""; position:absolute; inset:3px; border-radius:50%;
+  background:rgba(240,200,106,.14);
+  animation:trailFade 1.3s ease forwards; pointer-events:none;
+}
+@keyframes trailFade{0%{opacity:1;} 100%{opacity:0;}}
+.cell.safe.lit::after{
+  color:var(--gold-bright) !important;
+  text-shadow:0 0 12px rgba(240,200,106,.95);
+  animation:safeGlow .65s ease !important;
+}
+@keyframes safeGlow{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.55); text-shadow:0 0 18px rgba(240,200,106,1);}
+  100%{transform:scale(1);}
+}
+.capture-burst{position:absolute; pointer-events:none; z-index:20; transform:translate(-50%,-50%);}
+.capture-particle{
+  position:absolute; width:6px; height:6px; border-radius:50%;
+  animation:particleBurst .6s ease forwards;
+}
+@keyframes particleBurst{
+  0%{transform:translate(0,0) scale(1.2); opacity:1;}
+  100%{transform:translate(var(--px),var(--py)) scale(0); opacity:0;}
+}
+
+@media (max-width: 600px) {
+  .board-shell { width: min(84vw, 560px); }
+  .dice { width: 44px; height: 44px; padding: 5px; border-radius: 10px; }
+  .dice .pip { border-radius: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><h1>👑 Ludo · Royal Race</h1></div>
+  <div class="topbar-actions">
+    <div class="user-chip" id="userChip">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="userNameLabel">…</div>
+        <div class="user-stats" id="userStatsLabel">Wins 0 · Games 0</div>
+      </div>
+    </div>
+    <button class="icon-btn" id="walletBtn">Wallet (₹<span id="walletBalTxt">0</span>)</button>
+
+    <button class="icon-btn" id="howToBtn">How to Play</button>
+    <button class="icon-btn" id="rulesBtn" style="background:linear-gradient(135deg,rgba(255,235,59,.15),rgba(216,173,77,.15)); border-color:var(--gold);">📖 Rules</button>
+    <button class="icon-btn" id="logoutBtn">Log Out</button>
+  </div>
+</div>
+
+
+
+<!-- ============ ONLINE LOBBY SCREEN ============ -->
+<div class="lobby-wrap hidden" id="lobbyScreen">
+  <div class="lobby-card">
+    <h2>Quick Match</h2>
+    <p class="lobby-sub">Pick a table size — unlimited concurrent matches, no waiting.</p>
+    <div class="size-row" id="sizeRow">
+      <button class="size-btn" data-n="2">2 Players</button>
+      <button class="size-btn" data-n="3">3 Players</button>
+      <button class="size-btn active" data-n="4">4 Players</button>
+    </div>
+    <div class="fee-row" id="feeRow">
+      <button class="fee-btn active" data-f="50">₹50</button>
+      <button class="fee-btn" data-f="100">₹100</button>
+      <button class="fee-btn" data-f="200">₹200</button>
+      <button class="fee-btn" data-f="500">₹500</button>
+    </div>
+    <div id="preMatchPrizeInfo" style="text-align:center; font-weight:bold; color:#ffeb3b; font-size:1.1rem; margin-bottom:12px;">🏆 Winner gets: ₹<span id="preMatchPrizeAmt">190</span></div>
+    <button class="start-btn" id="findMatchBtn">Find Match ▶</button>
+    <button class="icon-btn" id="lobbyRulesBtn" style="width:100%; margin-top:10px; background:rgba(255,235,59,.08); border:1px solid var(--gold); color:var(--gold-bright); font-weight:700;">📖 Read Game Rules</button>
+  </div>
+
+
+  <div class="lobby-card hidden" id="queuingCard">
+    <div class="spinner"></div>
+    <div class="queue-status" id="queueStatus">Searching for players…</div>
+    <div class="queue-eta">Empty seats auto-fill within 12 seconds</div>
+    <button class="icon-btn" id="cancelQueueBtn" style="margin-top:16px;">Cancel</button>
+  </div>
+</div>
+
+
+
+<!-- ============ GAME SCREEN ============ -->
+<div class="game-wrap hidden" id="gameScreen">
+  <div id="prizePoolBanner" style="display:none; text-align:center; background:linear-gradient(90deg, #b29400, #ffeb3b, #b29400); color:#000; padding:4px 10px; font-weight:800; font-size:0.9rem; border-radius:6px; margin:0 auto 10px; max-width:80%; box-shadow:0 4px 15px rgba(255,235,59,.4);">🏆 Winner takes ₹<span id="prizeAmountDisplay">0</span></div>
+  <div class="hud"><div class="players-strip" id="playersStrip"></div></div>
+
+  <div class="board-shell">
+    <div class="board" id="board"></div>
+    <div class="dice" id="dice">
+      <div class="pip" id="p1"></div><div class="pip" id="p2"></div><div class="pip" id="p3"></div>
+      <div class="pip" id="p4"></div><div class="pip" id="p5"></div><div class="pip" id="p6"></div>
+      <div class="pip" id="p7"></div><div class="pip" id="p8"></div><div class="pip" id="p9"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="status-line" id="statusLine">Tap the die to roll</div>
+    <div id="turnTimerBar" style="display:none; margin:8px auto 0; width:min(300px,80vw); height:8px; border-radius:4px; background:rgba(255,255,255,.15); overflow:hidden;">
+      <div id="turnTimerFill" style="height:100%; width:100%; border-radius:4px; background:linear-gradient(90deg,#4caf50,#ffeb3b,#f44336); transition:width 1s linear;"></div>
+    </div>
+    <div id="turnTimerText" style="display:none; text-align:center; font-size:0.8rem; color:var(--gold); font-weight:bold; margin-top:4px;">20s</div>
+  </div>
+  <div class="footer-note" id="footerNote">Play Ludo Royal Race — live matches!</div>
+  <button class="cancel-game-btn hidden" id="cancelGameBtn">🚪 Leave Game</button>
+</div>
+
+<!-- ============ HOW TO PLAY MODAL ============ -->
+<div class="overlay hidden" id="howToModal">
+  <div class="modal">
+    <h2>How to Play Ludo</h2>
+    <h3>Goal</h3>
+    <p>Move all 4 of your pieces from your yard, once around the board, and into your home column before your opponents.</p>
+    <h3>Rolling</h3>
+    <ul>
+      <li>Roll a single die on your turn.</li>
+      <li>You need a <b>6</b> to bring a piece out of your yard.</li>
+      <li>Rolling a 6 gives you an extra roll. Three 6s in a row forfeits the turn.</li>
+    </ul>
+    <h3>Moving</h3>
+    <ul>
+      <li>Pieces move clockwise around the 52-square track, then up your own colored home column.</li>
+      <li>You must land <b>exactly</b> on the final home square — overshooting isn't allowed.</li>
+    </ul>
+    <h3>Capturing</h3>
+    <ul>
+      <li>Land exactly on a lone opponent piece to send it back to its yard. Capturing earns you an extra roll.</li>
+      <li>★-marked squares and every color's own starting square are <b>safe</b> — pieces there can't be captured.</li>
+    </ul>
+    <h3>Blocks</h3>
+    <ul><li>Two or more of your pieces sharing a square form a block. Opponents cannot land on or capture a block.</li></ul>
+    <h3>Winning</h3>
+    <p>The first player to bring all 4 pieces home wins. Play can continue to decide 2nd, 3rd and 4th place.</p>
+    <button class="icon-btn close-btn" id="closeHowTo" style="width:100%; margin-top:20px;">Got it</button>
+  </div>
+</div>
+
+<!-- ============ GAME RULES MODAL ============ -->
+<div class="overlay hidden" id="rulesModal">
+  <div class="modal" style="max-height:82vh; overflow-y:auto; text-align:left;">
+    <h2 style="text-align:center; color:var(--gold-bright); margin-bottom:16px;">📖 Ludo Turn & Dice Rules</h2>
+    <ul style="padding-left:18px; line-height:1.7; font-size:0.92rem;">
+      <li>If a player does not roll the dice within <b style="color:var(--gold-bright);">20 seconds</b>, the system automatically rolls the dice.</li>
+      <li>After the dice result appears, if the player does not move a pawn within <b style="color:var(--gold-bright);">20 seconds</b>, the system automatically selects and moves a valid pawn.</li>
+      <li>If only one pawn is movable, it moves automatically without waiting for user input.</li>
+      <li>If a player rolls <b style="color:var(--gold-bright);">6</b>, they receive one extra turn.</li>
+      <li>If a player rolls <b style="color:#f44336;">three consecutive 6s</b>, the third 6 is cancelled, no pawn moves, and the turn immediately passes to the next player.</li>
+      <li>If no valid pawn can move with the rolled number, the turn is automatically skipped after a short delay.</li>
+      <li>A <b style="color:var(--gold-bright);">turn timer</b> is shown for every player with a countdown on screen.</li>
+      <li>If a player disconnects during their turn, the system uses auto-play until they reconnect or they are marked as surrendered after the timeout.</li>
+      <li>Users are <b>strictly prevented</b> from rolling or moving pieces when it is not their turn.</li>
+      <li><b style="color:var(--gold-bright);">TWO SAME COLOUR PIECES CREATE A SAFE BLOCK CAN NOT CAPTURED .</b></li>
+      <li>All timers, dice results, and automatic actions are <b>synchronized in real time</b> for every player.</li>
+      <li>For AI turns, the dice stops on the final generated number and displays it clearly for <b style="color:var(--gold-bright);">1–2 seconds</b> before any pawn movement starts.</li>
+      <li>If multiple pawns are movable, <b>all valid pawns are highlighted</b> and the player can select any of them.</li>
+      <li>The dice is <b>fully responsive</b> on all mobile devices and screen sizes.</li>
+    </ul>
+    <button class="icon-btn close-btn" id="closeRules" style="width:100%; margin-top:18px;">Got it ✓</button>
+  </div>
+</div>
+
+<!-- ============ WIN / RANKING MODAL ============ -->
+<div class="overlay hidden" id="winModal">
+  <div class="modal">
+    <div class="trophy-hero"><span class="trophy-icon">🏆</span></div>
+    <h2 id="winTitle" style="text-align:center;">We have a winner!</h2>
+    <ul class="rank-list" id="rankList"></ul>
+    <button class="start-btn hidden" id="continueBtn">Play for next place</button>
+    <button class="icon-btn close-btn" id="newGameBtn" style="margin-top:10px; width:100%;">New Game</button>
+  </div>
+</div>
+
+<canvas id="confettiCanvas"></canvas>
+
+<!-- ============ WALLET MODAL ============ -->
+<div class="overlay hidden" id="walletModal">
+  <div class="modal" style="max-width:600px;">
+    <h2>My Wallet</h2>
+    <div class="wallet-balance">Current Balance: ₹<span id="modalWalletBal">0</span></div>
+    <div class="wallet-forms">
+      <div class="wallet-panel">
+        <h3>💳 Deposit Money</h3>
+        <p style="font-size:0.75rem; color:var(--cream-dim);">Scan QR code or pay to Admin UPI, then upload your screenshot.</p>
+        <div style="text-align:center; margin:12px 0;">
+          <img id="depositQrImg" src="" alt="QR Code" style="width:150px; height:150px; border-radius:12px; border:3px solid var(--gold); box-shadow:0 0 20px rgba(240,200,106,.3); background:#fff; object-fit:contain; display:none;">
+          <div id="depositQrPlaceholder" style="width:150px; height:150px; margin:0 auto; background:rgba(255,255,255,.08); border-radius:12px; border:2px dashed rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; color:var(--cream-dim); font-size:.8rem;">No QR uploaded</div>
+        </div>
+        <div id="depositUpiInfo" style="text-align:center; margin-bottom:14px; padding:8px; background:rgba(63,166,109,.1); border:1px solid rgba(63,166,109,.3); border-radius:10px; display:none;">
+          <span style="font-size:0.8rem; color:var(--green); font-weight:700;">UPI: <span id="depositUpiText"></span></span>
+        </div>
+        <form id="depositForm">
+          <label>Amount (₹)</label>
+          <input type="number" id="depositAmount" min="50" required>
+          <label>Payment Screenshot</label>
+          <input type="file" id="depositScreenshot" accept="image/*" required>
+          <button class="primary-btn" type="submit" style="padding:10px;">Submit Deposit</button>
+        </form>
+      </div>
+      <div class="wallet-panel">
+        <h3>Withdraw Winnings</h3>
+        <p style="font-size:0.75rem;">Withdrawals are processed via WhatsApp.</p>
+        <form id="withdrawForm">
+          <label>Amount (₹)</label>
+          <input type="number" id="withdrawAmount" min="50" required>
+          <button class="primary-btn" type="submit" style="padding:10px; background:var(--green);">Request Withdrawal</button>
+        </form>
+      </div>
+    </div>
+    <button class="icon-btn close-btn" id="closeWalletBtn" style="margin-top:20px; width:100%;">Close</button>
+  </div>
+</div>
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ================================================================
+   SECTION 0 — AUTH GUARD
+   Every page load verifies the stored session against the server
+   (which itself checks MongoDB), and bounces to /login.html if the
+   token is missing or invalid.
+   ================================================================ */
+const token = localStorage.getItem('ludo_token');
+if(!token){ window.location.href = 'login.html'; return; }
+
+let currentUser = null;
+let appSettings = {};
+
+async function fetchSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    appSettings = await res.json();
+    renderFeeSlots();
+    applySettingsToUI();
+  } catch(e) { console.error('Failed to load settings', e); }
+}
+
+function applySettingsToUI() {
+  // QR Image in deposit panel
+  const qrImg = document.getElementById('depositQrImg');
+  const qrPlaceholder = document.getElementById('depositQrPlaceholder');
+  if (appSettings.qrImage) {
+    qrImg.src = appSettings.qrImage;
+    qrImg.style.display = 'inline-block';
+    if(qrPlaceholder) qrPlaceholder.style.display = 'none';
+  } else {
+    qrImg.style.display = 'none';
+    if(qrPlaceholder) qrPlaceholder.style.display = 'flex';
+  }
+  // UPI info in deposit panel
+  const upiInfo = document.getElementById('depositUpiInfo');
+  const upiText = document.getElementById('depositUpiText');
+  if (appSettings.upiDetails) {
+    upiText.textContent = appSettings.upiDetails;
+    upiInfo.style.display = 'block';
+  } else {
+    upiInfo.style.display = 'none';
+  }
+}
+
+function renderFeeSlots() {
+  const row = document.getElementById('feeRow');
+  row.innerHTML = '';
+  if(!appSettings.entryFeeSlots) return;
+  const activeSlots = appSettings.entryFeeSlots.filter(s => s.isEnabled);
+  activeSlots.forEach((slot, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'fee-btn' + (i === 0 ? ' active' : '');
+    btn.dataset.f = slot.amount;
+    btn.textContent = '₹' + slot.amount;
+    row.appendChild(btn);
+  });
+  if(activeSlots.length > 0) entryFee = activeSlots[0].amount;
+}
+
+async function loadProfile(){
+  try{
+    const res = await fetch('/api/auth/me', { headers:{ Authorization:'Bearer '+token } });
+    if(!res.ok) throw new Error('session invalid');
+    const data = await res.json();
+    currentUser = data.user;
+    currentUser.id = data.uid || currentUser._id;
+    renderUserChip();
+    document.getElementById('walletBalTxt').textContent = currentUser.walletBalance;
+    document.getElementById('modalWalletBal').textContent = currentUser.walletBalance;
+    
+
+    await fetchSettings();
+
+    // If a live match was in progress when the page was last closed/refreshed,
+    // rejoin it automatically instead of dropping the player back to the menu.
+    const savedRoom = localStorage.getItem('ludo_room');
+    const savedSeat = localStorage.getItem('ludo_seat');
+    if(savedRoom && savedSeat){
+      ensureSocket();
+      buildBoard();
+      showScreen('lobbyScreen');
+      document.getElementById('queuingCard').classList.remove('hidden');
+      document.getElementById('queueStatus').textContent = 'Reconnecting to your match…';
+      socket.emit('room:rejoin', { roomId: savedRoom, color: savedSeat });
+    } else {
+      showScreen('lobbyScreen');
+    }
+  }catch(e){
+    localStorage.removeItem('ludo_token');
+    localStorage.removeItem('ludo_user');
+    window.location.href = 'login.html';
+  }
+}
+
+function renderUserChip(){
+  const initial = currentUser.username.slice(0,1).toUpperCase();
+  const avatar = document.getElementById('userAvatar');
+  avatar.textContent = initial;
+  avatar.style.background = `var(--${currentUser.favoriteColor})`;
+  document.getElementById('userNameLabel').textContent = currentUser.username;
+  document.getElementById('userStatsLabel').textContent =
+    `Wins ${currentUser.stats.gamesWon} · Games ${currentUser.stats.gamesPlayed}`;
+}
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  localStorage.removeItem('ludo_token');
+  localStorage.removeItem('ludo_user');
+  window.location.href = 'login.html';
+});
+
+async function postMatchResult(won){
+  try{
+    const res = await fetch('/api/match/result', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
+      body: JSON.stringify({ won })
+    });
+    if(res.ok){
+      const data = await res.json();
+      currentUser.stats = data.stats;
+      renderUserChip();
+    }
+  }catch(e){ /* stats update is best-effort; gameplay already finished regardless */ }
+}
+
+/* ================================================================
+   SECTION 1 — BOARD GEOMETRY / CONSTANTS
+   ================================================================ */
+const PATH = [
+  [6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],
+  [1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],
+  [8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],
+  [14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],
+  [8,1],[8,0],[7,0],[6,0]
+];
+const HOME_COLUMNS = {
+  red:    [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],
+  green:  [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],
+  yellow: [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],
+  blue:   [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
+};
+const START_IDX = { red:0, green:13, yellow:26, blue:39 };
+const STAR_IDX = [8,21,34,47];
+const SAFE_GLOBAL = new Set([...STAR_IDX, ...Object.values(START_IDX)]);
+const YARD_ORIGIN = { red:[0,0], green:[0,9], yellow:[9,9], blue:[9,0] };
+const YARD_SLOTS = [[1,1],[1,4],[4,1],[4,4]];
+const COLORS = ['red','green','yellow','blue'];
+const COLOR_LABEL = { red:'Red', green:'Green', yellow:'Yellow', blue:'Blue' };
+const MEDALS = ['🥇','🥈','🥉','4️⃣'];
+
+// Where each color's floating die sits, as a percentage position within
+// the board-shell (chosen so each die hovers just outside its own yard).
+const DICE_ANCHOR = {
+  red:    { left:'-1%',  top:'-1%'  },
+  green:  { left:'101%', top:'-1%'  },
+  yellow: { left:'101%', top:'101%' },
+  blue:   { left:'-1%',  top:'101%' }
+};
+
+/* ================================================================
+   SECTION 2 — GAME STATE
+   ================================================================ */
+const state = {
+  players: [], order: [], turnPtr: 0, dice: 1,
+  consecutiveSixes: 0, phase: 'setup', finishedOrder: []
+};
+let isAnimating = false;
+function activePlayer(){ return state.players[state.order[state.turnPtr]]; }
+
+/* ================================================================
+   SECTION 3 — PATH / POSITION HELPERS
+   ================================================================ */
+function cellOf(color, pos){
+  if(pos < 0) return null;
+  if(pos <= 50) return PATH[(START_IDX[color] + pos) % 52];
+  return HOME_COLUMNS[color][pos - 51];
+}
+function isSafeCell(color, pos){
+  if(pos < 0) return true;
+  if(pos >= 51) return true;
+  return SAFE_GLOBAL.has((START_IDX[color] + pos) % 52);
+}
+function occupantsAt(color, pos){
+  if(pos < 0 || pos >= 51) return [];
+  const target = (START_IDX[color] + pos) % 52;
+  const found = [];
+  state.players.forEach((pl, pi)=>{
+    pl.pieces.forEach((pc, ci)=>{
+      if(pc.pos >= 0 && pc.pos <= 50 && (START_IDX[pl.color] + pc.pos) % 52 === target){
+        found.push({playerIdx:pi, pieceIdx:ci});
+      }
+    });
+  });
+  return found;
+}
+
+/* ================================================================
+   SECTION 4 — LEGAL MOVE CALCULATION
+   ================================================================ */
+function legalMoves(playerIdx, dice){
+  const pl = state.players[playerIdx];
+  const moves = [];
+  pl.pieces.forEach((pc, idx)=>{
+    if(pc.pos === 56) return;
+    if(pc.pos === -1){
+      if(dice === 6){
+        moves.push({pieceIdx:idx, fromPos:-1, toPos:0, isExit:true});
+      }
+      return;
+    }
+    const to = pc.pos + dice;
+    if(to > 56) return;
+    if(to <= 50){
+      const occ = occupantsAt(pl.color, to);
+      const opponentCounts = {};
+      occ.forEach(o=>{ if(o.playerIdx !== playerIdx) opponentCounts[o.playerIdx] = (opponentCounts[o.playerIdx]||0)+1; });
+      if(Object.values(opponentCounts).some(c=>c>=2)) return;
+    }
+    moves.push({pieceIdx:idx, fromPos:pc.pos, toPos:to, isExit:false});
+  });
+  return moves;
+}
+
+/* ================================================================
+   SECTION 5 — AI DECISION LOGIC
+   ================================================================ */
+function scoreMove(playerIdx, move){
+  const pl = state.players[playerIdx];
+  let score = move.toPos;
+  if(move.isExit) score += 40;
+  if(move.toPos === 56) score += 120;
+  if(move.toPos <= 50){
+    const occ = occupantsAt(pl.color, move.toPos).filter(o=>o.playerIdx!==playerIdx);
+    const cellIsSafe = isSafeCell(pl.color, move.toPos);
+    if(occ.length && !cellIsSafe) score += 200 * occ.length;
+    if(cellIsSafe) score += 25;
+    const ownHere = occupantsAt(pl.color, move.toPos).filter(o=>o.playerIdx===playerIdx);
+    if(ownHere.length) score += 35;
+    if(!cellIsSafe){
+      const target = (START_IDX[pl.color] + move.toPos) % 52;
+      let threatened = false;
+      state.players.forEach((op, opi)=>{
+        if(opi===playerIdx) return;
+        op.pieces.forEach(opc=>{
+          if(opc.pos>=0 && opc.pos<=50){
+            const opGlobal = (START_IDX[op.color]+opc.pos)%52;
+            const diff = (target - opGlobal + 52) % 52;
+            if(diff>=1 && diff<=6) threatened = true;
+          }
+        });
+      });
+      if(threatened) score -= 60;
+    }
+  } else { score += 15; }
+  return score + Math.random()*8;
+}
+function aiChooseMove(playerIdx, moves){
+  let best = moves[0], bestScore = -Infinity;
+  moves.forEach(m=>{ const s = scoreMove(playerIdx, m); if(s > bestScore){ bestScore = s; best = m; } });
+  return best;
+}
+
+/* ================================================================
+   SECTION 6 — SOUND (synthesized)
+   ================================================================ */
+let actx = null;
+window.isMuted = false;
+function audioCtx(){ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function tone(freq, dur, type='sine', gain=.18, delay=0){
+  if (window.isMuted) return;
+  try{
+    const ctx = audioCtx(); const t0 = ctx.currentTime + delay;
+    const osc = ctx.createOscillator(); const g = ctx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(gain, t0); g.gain.exponentialRampToValueAtTime(.001, t0+dur);
+    osc.connect(g); g.connect(ctx.destination); osc.start(t0); osc.stop(t0+dur+.02);
+  }catch(e){}
+}
+const sfx = {
+  diceTick: ()=> tone(600+Math.random()*200, .05, 'square', .07),
+  step:     ()=> tone(350+Math.random()*80, .06, 'triangle', .06),
+  move:     ()=> tone(420, .09, 'triangle', .12),
+  land:     ()=>{ tone(280,.12,'triangle',.14); tone(200,.08,'sine',.06,.05); },
+  capture:  ()=>{ tone(300,.15,'sawtooth',.15); tone(180,.22,'sawtooth',.12,.08); tone(120,.3,'sawtooth',.08,.15); },
+  block:    ()=>{ tone(500,.1,'sine',.12); tone(650,.14,'sine',.1,.09); },
+  home:     ()=>{ tone(660,.12,'sine',.14); tone(880,.16,'sine',.12,.1); },
+  homeEnter:()=>{ tone(520,.1,'sine',.1); tone(660,.12,'sine',.08,.08); },
+  safeZone: ()=>{ tone(880,.15,'sine',.08); tone(1100,.12,'sine',.06,.08); },
+  win:      ()=>{ [523,659,784,1047,1319].forEach((f,i)=>tone(f,.3,'sine',.16,i*.13)); }
+};
+
+/* ================================================================
+   SECTION 6b — SCREEN NAVIGATION
+   ================================================================ */
+const ALL_SCREENS = ['lobbyScreen','gameScreen'];
+function showScreen(name){
+  ALL_SCREENS.forEach(id=> document.getElementById(id).classList.toggle('hidden', id!==name));
+  // Show cancel button only in online game
+  const cancelBtn = document.getElementById('cancelGameBtn');
+  if(name === 'gameScreen' && mode === 'online') cancelBtn.classList.remove('hidden');
+  else cancelBtn.classList.add('hidden');
+}
+
+/* ================================================================
+   SECTION 6c — ONLINE MULTIPLAYER (Socket.io matchmaking + live play)
+   `mode` is 'local' (practice) or 'online' (real-time match). The exact
+   same board renderers (buildBoard/renderTokens/renderHUD) are reused
+   for both — only how turns are driven differs.
+   ================================================================ */
+let mode = 'local';
+let socket = null;
+let mySeatColor = null;
+let myRoomId = null;
+let onlineSize = 4;
+let waitingForOnlineDice = false;
+let pendingOnlineState = null;
+
+function ensureSocket(){
+  if(socket) return socket;
+  socket = io({ auth:{ token } });
+
+  socket.on('queue:joined', ({ size, entryFee })=>{
+    document.getElementById('queueStatus').textContent = `Searching for a ${size}-player table (₹${entryFee})…`;
+  });
+
+  socket.on('queue:error', ({ error })=>{
+    alert(error);
+    document.getElementById('queuingCard').classList.add('hidden');
+  });
+
+  socket.on('wallet:update', ({ newBalance })=>{
+    if (currentUser) {
+      currentUser.walletBalance = newBalance;
+      document.getElementById('walletBalTxt').textContent = newBalance;
+      document.getElementById('modalWalletBal').textContent = newBalance;
+    }
+  });
+
+  socket.on('settings:update', (newSettings)=>{
+    appSettings = newSettings;
+    renderFeeSlots();
+    applySettingsToUI();
+  });
+
+  socket.on('user:banned', ()=>{
+    alert('Your account has been suspended or banned by the administrator.');
+    localStorage.removeItem('ludo_token');
+    window.location.href = 'login.html';
+  });
+
+  socket.on('match:found', ({ roomId, seatColor })=>{
+    myRoomId = roomId; mySeatColor = seatColor; mode = 'online';
+    window.isMuted = false;
+    localStorage.setItem('ludo_room', roomId);
+    localStorage.setItem('ludo_seat', seatColor);
+    document.getElementById('footerNote').textContent =
+      "You're playing as "+seatColor.charAt(0).toUpperCase()+seatColor.slice(1)+' in a live match.';
+    buildBoard();
+    showScreen('gameScreen');
+    document.getElementById('cancelGameBtn').classList.remove('hidden');
+  });
+
+  socket.on('room:state', (room)=>{
+    if(isAnimating) pendingOnlineState = room;
+    else applyOnlineRoomState(room);
+  });
+
+  socket.on('room:event', (evt)=>{
+    if(evt.type==='move'){
+      const playerIdx = state.players.findIndex(p=> p.color===evt.color);
+      if(playerIdx >= 0) applyMove(playerIdx, evt.move);
+    } else if(evt.type==='game-over'){
+      sfx.win();
+      launchConfetti();
+      const myPlayerIdx = state.players.findIndex(p=> p.color===mySeatColor);
+      const iWon = evt.finishedOrder[0] === myPlayerIdx;
+      if(currentUser) postMatchResult(iWon);
+      localStorage.removeItem('ludo_room'); localStorage.removeItem('ludo_seat');
+    }
+  });
+
+  socket.on('room:dice_result', (data) => {
+    // strict 1.2s visual rolling delay matching the 1.5s server hold
+    const diceEl = document.getElementById('dice');
+    diceEl.classList.add('rolling');
+    diceEl.classList.add('disabled');
+    localDiceLocked = true;
+    
+    let ticks = 0;
+    const spin = setInterval(() => {
+      showDiceFace(1 + Math.floor(Math.random() * 6));
+      sfx.diceTick();
+      ticks++;
+      if (ticks >= 15) { // ~1.1 seconds (15 * 75ms)
+        clearInterval(spin);
+        diceEl.classList.remove('rolling');
+        showDiceFace(data.dice);
+      }
+    }, 75);
+  });
+
+  socket.on('room:start', (room)=>{
+    myRoomId = room.id;
+    window.isMuted = false;
+    
+    // Calculate and show prize pool
+    const totalPool = room.entryFee * room.size;
+    const winningAmount = totalPool - (totalPool * 0.05);
+    document.getElementById('prizeAmountDisplay').textContent = winningAmount;
+    document.getElementById('prizePoolBanner').style.display = 'block';
+
+    const me = room.seats.find(s=>s.socketId===socket.id);
+  });
+
+  socket.on('room:not_found', ()=>{
+    myRoomId = null; mySeatColor = null;
+    document.getElementById('cancelGameBtn').classList.add('hidden');
+    showScreen('lobbyScreen');
+  });
+
+  return socket;
+}
+
+// Server pushes the full authoritative room state; we translate it into
+// the same `state` shape the local renderers already understand.
+function applyOnlineRoomState(room){
+  state.players = room.players.map(p=>({ color:p.color, pieces:p.pieces.map(pc=>({pos:pc.pos})), finished:p.finished }));
+  state.order = room.order;
+  state.turnPtr = room.turnPtr;
+  state.dice = room.dice;
+  state.phase = room.phase === 'ended' ? 'ended' : room.phase;
+  state.finishedOrder = room.finishedOrder;
+  
+  if (state.phase === 'rolling') {
+    localDiceLocked = false;
+    document.getElementById('dice').classList.remove('disabled');
+  }
+
+  // Attach display names/AI flags (kept separately server-side as "seats").
+  room.seats.forEach((seat,i)=>{
+    state.players[i].name = seat.color===mySeatColor ? (currentUser? currentUser.username : 'You') : seat.name;
+    state.players[i].isAI = seat.isAI;
+    state.players[i].connectedFlag = seat.connected;
+  });
+
+  showDiceFace(state.dice);
+  renderHUD();
+  renderTokens();
+  positionDiceForOnline();
+
+  const myTurn = isMyTurnOnline();
+  if(state.phase==='ended'){
+    clearTurnTimer();
+    setStatus('Game over.');
+    showWinModal(true);
+  } else if(myTurn && state.phase==='rolling'){
+    setStatus("Your turn — tap your die to roll.");
+    startTurnTimer(20);
+  } else if(myTurn && state.phase==='choosing'){
+    setStatus('Choose a piece to move.');
+    startTurnTimer(20);
+  } else {
+    clearTurnTimer();
+    const activeName = state.players[state.order[state.turnPtr]].name;
+    setStatus(activeName+"'s turn…");
+  }
+}
+
+function isMyTurnOnline(){
+  if(mode!=='online' || !mySeatColor) return false;
+  const active = state.players[state.order[state.turnPtr]];
+  return active && active.color === mySeatColor;
+}
+
+function positionDiceForOnline(){
+  const active = state.players[state.order[state.turnPtr]];
+  if(!active) return;
+  const anchor = DICE_ANCHOR[active.color];
+  diceEl.style.left = anchor.left; diceEl.style.top = anchor.top;
+  diceEl.style.setProperty('--dice-glow', `var(--${active.color})`);
+  diceEl.classList.toggle('disabled', !isMyTurnOnline() || state.phase!=='rolling');
+}
+
+/* ---- Turn Countdown Timer ---- */
+let turnTimerInterval = null;
+let turnTimerSeconds = 20;
+
+function startTurnTimer(seconds){
+  clearTurnTimer();
+  turnTimerSeconds = seconds;
+  const bar = document.getElementById('turnTimerBar');
+  const fill = document.getElementById('turnTimerFill');
+  const txt = document.getElementById('turnTimerText');
+  if(!bar) return;
+  bar.style.display = 'block'; txt.style.display = 'block';
+  fill.style.transition = 'none';
+  fill.style.width = '100%';
+  requestAnimationFrame(()=>{
+    fill.style.transition = 'width '+seconds+'s linear';
+    requestAnimationFrame(()=>{ fill.style.width = '0%'; });
+  });
+  txt.textContent = seconds+'s';
+  turnTimerInterval = setInterval(()=>{
+    turnTimerSeconds--;
+    txt.textContent = turnTimerSeconds+'s';
+    if(turnTimerSeconds <= 0) clearTurnTimer();
+  }, 1000);
+}
+
+function clearTurnTimer(){
+  if(turnTimerInterval) clearInterval(turnTimerInterval);
+  turnTimerInterval = null;
+  const bar = document.getElementById('turnTimerBar');
+  const txt = document.getElementById('turnTimerText');
+  if(bar) bar.style.display = 'none';
+  if(txt) txt.style.display = 'none';
+}
+
+
+
+/* ---- Online lobby wiring ---- */
+let entryFee = 50;
+const sizeRow = document.getElementById('sizeRow');
+const feeRow = document.getElementById('feeRow');
+
+function updatePreMatchPrize() {
+  const prize = (onlineSize * entryFee) * 0.95;
+  document.getElementById('preMatchPrizeAmt').textContent = prize;
+}
+updatePreMatchPrize();
+
+sizeRow.addEventListener('click', e=>{
+  const btn = e.target.closest('.size-btn'); if(!btn) return;
+  onlineSize = parseInt(btn.dataset.n,10);
+  [...sizeRow.children].forEach(b=>b.classList.toggle('active', b===btn));
+  updatePreMatchPrize();
+});
+feeRow.addEventListener('click', e=>{
+  const btn = e.target.closest('.fee-btn'); if(!btn) return;
+  entryFee = parseInt(btn.dataset.f,10);
+  [...feeRow.children].forEach(b=>b.classList.toggle('active', b===btn));
+  updatePreMatchPrize();
+});
+
+document.getElementById('findMatchBtn').addEventListener('click', ()=>{
+  if(currentUser.walletBalance < entryFee) {
+    alert('Insufficient wallet balance. Please deposit money first.');
+    document.getElementById('walletModal').classList.remove('hidden');
+    return;
+  }
+  ensureSocket();
+  document.getElementById('queuingCard').classList.remove('hidden');
+  document.getElementById('queueStatus').textContent = 'Searching for players…';
+  socket.emit('queue:join', {
+    size: onlineSize,
+    entryFee: entryFee,
+    name: currentUser ? currentUser.username : 'Guest',
+    favoriteColor: currentUser ? currentUser.favoriteColor : 'red'
+  });
+});
+document.getElementById('cancelQueueBtn').addEventListener('click', ()=>{
+  if(socket) socket.emit('queue:leave');
+  document.getElementById('queuingCard').classList.add('hidden');
+});
+
+/* ---- Wallet Wiring ---- */
+document.getElementById('walletBtn').addEventListener('click', ()=> document.getElementById('walletModal').classList.remove('hidden'));
+document.getElementById('closeWalletBtn').addEventListener('click', ()=> document.getElementById('walletModal').classList.add('hidden'));
+
+/* ---- Cancel Game Button ---- */
+document.getElementById('cancelGameBtn').addEventListener('click', ()=>{
+  if(!confirm('Leave the game? You will forfeit your entry fee — remaining players continue.')) return;
+  if(socket) socket.emit('room:leave');
+  window.isMuted = true;
+  myRoomId = null;
+  mySeatColor = null;
+  mySeatColor = null;
+  pendingOnlineState = null;
+  waitingForOnlineDice = false;
+  localStorage.removeItem('ludo_room');
+  localStorage.removeItem('ludo_seat');
+  document.getElementById('cancelGameBtn').classList.add('hidden');
+  showScreen('lobbyScreen');
+});
+
+document.getElementById('depositForm').addEventListener('submit', async(e)=>{
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append('amount', document.getElementById('depositAmount').value);
+  formData.append('screenshot', document.getElementById('depositScreenshot').files[0]);
+  try{
+    const res = await fetch('/api/wallet/deposit', {
+      method:'POST',
+      headers:{ Authorization:'Bearer '+token },
+      body: formData
+    });
+    const data = await res.json();
+    if(res.ok){ alert('Deposit requested successfully. Wait for admin approval.'); document.getElementById('depositForm').reset(); }
+    else throw new Error(data.error);
+  }catch(err){ alert(err.message); }
+});
+
+document.getElementById('withdrawForm').addEventListener('submit', async(e)=>{
+  e.preventDefault();
+  const amt = document.getElementById('withdrawAmount').value;
+  try{
+    const res = await fetch('/api/wallet/withdraw', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
+      body: JSON.stringify({ amount: amt })
+    });
+    const data = await res.json();
+    if(res.ok){
+      currentUser.walletBalance = data.newBalance;
+      document.getElementById('walletBalTxt').textContent = data.newBalance;
+      document.getElementById('modalWalletBal').textContent = data.newBalance;
+      
+      const waNum = appSettings.whatsappNumber || '8850919451';
+      const waText = encodeURIComponent(`Withdrawal Request\nUser ID: ${currentUser.id}\nUsername: ${currentUser.username}\nPhone: ${currentUser.phoneNumber}\nRequested Amount: ₹${amt}\nCurrent Balance: ₹${data.newBalance}`);
+      window.open(`https://wa.me/${waNum}?text=${waText}`, '_blank');
+      
+      document.getElementById('withdrawForm').reset();
+    } else throw new Error(data.error);
+  }catch(err){ alert(err.message); }
+});
+
+/* ================================================================
+   SECTION 7 — GAME SCREEN REFS
+   ================================================================ */
+const gameScreen = document.getElementById('gameScreen');
+
+/* ================================================================
+   SECTION 8 — BOARD RENDERING
+   ================================================================ */
+const boardEl = document.getElementById('board');
+let cellMap = {};
+function buildBoard(){
+  boardEl.innerHTML = '';
+  cellMap = {};
+  const frag = document.createDocumentFragment();
+  for(let r=0;r<15;r++){
+    for(let c=0;c<15;c++){
+      const inYard = (r<6&&c<6)||(r<6&&c>8)||(r>8&&c<6)||(r>8&&c>8);
+      const inCenter = r>=6&&r<=8&&c>=6&&c<=8;
+      if(inYard || inCenter) continue;
+      const div = document.createElement('div');
+      div.className = 'cell track';
+      div.style.gridRow = (r+1); div.style.gridColumn = (c+1);
+      if(isOnTrack(r,c) && SAFE_GLOBAL.has(pathIndexOf(r,c))) div.classList.add('safe');
+      COLORS.forEach(color=>{
+        if(sameCell(HOME_COLUMNS[color], r, c)) div.classList.add('home-'+color);
+        const [sr,sc] = PATH[START_IDX[color]];
+        if(sr===r && sc===c) div.classList.add('start-'+color);
+      });
+      cellMap[r+','+c] = div;
+      frag.appendChild(div);
+    }
+  }
+  COLORS.forEach(color=>{
+    const [or_,oc] = YARD_ORIGIN[color];
+    const box = document.createElement('div');
+    box.className = 'yard-box '+color;
+    box.style.gridRow = (or_+1)+' / '+(or_+7);
+    box.style.gridColumn = (oc+1)+' / '+(oc+7);
+    YARD_SLOTS.forEach(([sr,sc])=>{
+      const slot = document.createElement('div');
+      slot.className='yard-slot';
+      slot.style.left = ((sc+0.5)/6*100)+'%';
+      slot.style.top = ((sr+0.5)/6*100)+'%';
+      box.appendChild(slot);
+    });
+    frag.appendChild(box);
+  });
+  const centerWrap = document.createElement('div');
+  centerWrap.style.gridRow = '7 / 10'; centerWrap.style.gridColumn = '7 / 10'; centerWrap.style.position = 'relative';
+  centerWrap.innerHTML = `
+    <svg class="center-svg" viewBox="0 0 3 3" preserveAspectRatio="none">
+      <polygon points="0,0 0,3 1.5,1.5" fill="var(--red)"/>
+      <polygon points="0,0 3,0 1.5,1.5" fill="var(--green)"/>
+      <polygon points="3,0 3,3 1.5,1.5" fill="var(--yellow)"/>
+      <polygon points="3,3 0,3 1.5,1.5" fill="var(--blue)"/>
+    </svg>`;
+  frag.appendChild(centerWrap);
+  const tokenLayer = document.createElement('div');
+  tokenLayer.className = 'token-layer'; tokenLayer.id = 'tokenLayer';
+  tokenLayer.style.gridRow = '1 / 16'; tokenLayer.style.gridColumn = '1 / 16';
+  frag.appendChild(tokenLayer);
+  boardEl.appendChild(frag);
+}
+function sameCell(list, r, c){ return list.some(([rr,cc])=>rr===r&&cc===c); }
+function isOnTrack(r,c){ return PATH.some(([rr,cc])=>rr===r&&cc===c); }
+function pathIndexOf(r,c){ return PATH.findIndex(([rr,cc])=>rr===r&&cc===c); }
+
+/* ================================================================
+   SECTION 9 — TOKEN RENDERING
+   ================================================================ */
+function pixelCoord(color, pos, slotIdx){
+  if(pos === -1){
+    const [or_,oc] = YARD_ORIGIN[color]; const [sr,sc] = YARD_SLOTS[slotIdx];
+    return [ (or_+sr), (oc+sc) ];
+  }
+  return cellOf(color, pos);
+}
+const CLUSTER_OFFSETS = [[0,0],[1.6,-1.6],[-1.6,1.6],[1.6,1.6],[-1.6,-1.6],[0,-2.2]];
+function renderTokens(){
+  const layer = document.getElementById('tokenLayer');
+  layer.innerHTML = '';
+  const groups = new Map();
+  state.players.forEach((pl,pi)=>{
+    pl.pieces.forEach((pc,ci)=>{
+      const [row,col] = pixelCoord(pl.color, pc.pos, ci);
+      const key = row+','+col;
+      if(!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({pi,ci,row,col,pc,color:pl.color});
+    });
+  });
+  const moves = (state.phase==='choosing') ? legalMoves(state.order[state.turnPtr], state.dice) : [];
+  const movablePieceIdx = new Set(moves.map(m=>m.isExit? 'exit' : m.pieceIdx));
+  groups.forEach(list=>{
+    list.forEach((item, i)=>{
+      const off = CLUSTER_OFFSETS[i % CLUSTER_OFFSETS.length];
+      const div = document.createElement('div');
+      div.className = 'token '+item.color;
+      div.dataset.pi = item.pi;
+      div.dataset.ci = item.ci;
+      if(item.pc.pos===56) div.classList.add('finished');
+      div.style.left = ((item.col+0.5)/15*100 + off[0]*0.35)+'%';
+      div.style.top = ((item.row+0.5)/15*100 + off[1]*0.35)+'%';
+      const isCurrentPlayerPiece = item.pi === state.order[state.turnPtr];
+      const belongsToMeIfOnline = mode!=='online' || item.color===mySeatColor;
+      if(isCurrentPlayerPiece && state.phase==='choosing' && belongsToMeIfOnline){
+        const isMovable = item.pc.pos===-1 ? movablePieceIdx.has('exit') : movablePieceIdx.has(item.ci);
+        if(isMovable){ div.classList.add('movable'); div.addEventListener('click', ()=> onTokenClick(item.pi, item.ci)); }
+      }
+      layer.appendChild(div);
+    });
+  });
+}
+
+/* ================================================================
+   SECTION 10 — HUD RENDERING
+   ================================================================ */
+function renderHUD(){
+  const strip = document.getElementById('playersStrip');
+  strip.innerHTML = '';
+  state.players.forEach((pl,pi)=>{
+    const chip = document.createElement('div');
+    const isActive = state.order[state.turnPtr] === pi && state.phase!=='ended';
+    chip.className = 'player-chip'+(isActive?' active':'')+(pl.finished?' finished':'');
+    chip.style.setProperty('--chip-color', `var(--${pl.color})`);
+    const homeCount = pl.pieces.filter(p=>p.pos===56).length;
+    const avatarInner = pl.isAI ? `<img src="https://i.pravatar.cc/100?u=${pl.name}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : '🧑';
+    chip.innerHTML = `<div class="player-avatar" style="overflow:hidden; border:2px solid var(--cream);">${avatarInner}</div>
+      <div><div class="player-name">${pl.name}</div><div class="player-meta">${homeCount}/4 home${pl.finished?' · done':''}</div></div>`;
+    strip.appendChild(chip);
+  });
+}
+
+/* ================================================================
+   SECTION 11 — DICE (floats to the active player's own corner)
+   ================================================================ */
+const PIP_PATTERNS = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] };
+function showDiceFace(n){
+  for(let i=0;i<9;i++) document.getElementById('p'+(i+1)).style.opacity = 0;
+  PIP_PATTERNS[n].forEach(i=> document.getElementById('p'+(i+1)).style.opacity = 1);
+}
+showDiceFace(1);
+const diceEl = document.getElementById('dice');
+const statusLine = document.getElementById('statusLine');
+
+function positionDiceForActivePlayer(){
+  const pl = activePlayer();
+  const anchor = DICE_ANCHOR[pl.color];
+  diceEl.style.left = anchor.left; diceEl.style.top = anchor.top;
+  diceEl.style.setProperty('--dice-glow', `var(--${pl.color})`);
+}
+
+let localDiceLocked = false;
+diceEl.addEventListener('click', ()=>{
+  if(mode==='online'){
+    if(!isMyTurnOnline() || state.phase!=='rolling' || localDiceLocked) return;
+    localDiceLocked = true;
+    diceEl.classList.add('disabled');
+    socket.emit('dice:roll');
+    return;
+  }
+  const pl = activePlayer();
+  if(state.phase !== 'rolling' || pl.isAI) return;
+  performRoll();
+});
+function setStatus(text){ statusLine.textContent = text; }
+
+function performRoll(){
+  if(state.phase==='ended') return;
+  state.phase = 'animating';
+  // Generate the final dice result BEFORE animation starts —
+  // scrolling numbers during animation are purely visual effects.
+  const result = 1+Math.floor(Math.random()*6);
+  diceEl.classList.add('rolling');
+  let ticks = 0; const maxTicks = 10;
+  const spin = setInterval(()=>{
+    // Visual-only random faces — these never affect gameplay
+    showDiceFace(1+Math.floor(Math.random()*6)); sfx.diceTick(); ticks++;
+    if(ticks>=maxTicks){
+      clearInterval(spin); diceEl.classList.remove('rolling');
+      // Display the pre-determined result and proceed
+      showDiceFace(result); resolveRoll(result);
+    }
+  }, 70);
+}
+
+function resolveRoll(result){
+  state.dice = result;
+  if(result===6) state.consecutiveSixes++; else state.consecutiveSixes = 0;
+
+  if(state.consecutiveSixes===3){
+    setStatus(activePlayer().name+' rolled three 6s — turn forfeited!');
+    state.consecutiveSixes = 0;
+    setTimeout(endTurn, 900);
+    return;
+  }
+  const moves = legalMoves(state.order[state.turnPtr], result);
+  if(moves.length===0){
+    setStatus('No legal move for a '+result+'.');
+    setTimeout(()=>{ if(result===6) beginRoll(); else endTurn(); }, 800);
+    return;
+  }
+  const pl = activePlayer();
+  if(pl.isAI){
+    setStatus(pl.name+' is thinking…');
+    setTimeout(()=>{
+      const choice = aiChooseMove(state.order[state.turnPtr], moves);
+      applyMove(state.order[state.turnPtr], choice);
+    }, 550);
+  } else {
+    state.phase = 'choosing';
+    renderTokens();
+    setStatus(moves.length===1 ? 'Tap the highlighted piece to move it.' : 'Choose a piece to move.');
+    if(moves.length===1){ setTimeout(()=> applyMove(state.order[state.turnPtr], moves[0]), 550); }
+  }
+}
+
+function onTokenClick(playerIdx, pieceIdx){
+  if(state.phase!=='choosing' || playerIdx!==state.order[state.turnPtr]) return;
+  if(mode==='online'){
+    if(state.players[playerIdx].color !== mySeatColor) return;
+    socket.emit('move:choose', { pieceIdx });
+    return;
+  }
+  const moves = legalMoves(playerIdx, state.dice);
+  const move = moves.find(m=> m.isExit ? state.players[playerIdx].pieces[pieceIdx].pos===-1 : m.pieceIdx===pieceIdx);
+  if(!move) return;
+  applyMove(playerIdx, move);
+}
+
+/* ================================================================
+   SECTION 12 — APPLYING A MOVE
+   ================================================================ */
+function applyMove(playerIdx, move){
+  state.phase = 'animating';
+  isAnimating = true;
+  const pl = state.players[playerIdx];
+  const piece = pl.pieces[move.pieceIdx];
+
+  // Build intermediate step positions
+  let steps;
+  if(move.isExit){ steps = [0]; }
+  else { steps = []; for(let p = move.fromPos+1; p<=move.toPos; p++) steps.push(p); }
+
+  // Render all tokens first so we can find the moving one in DOM
+  renderTokens();
+
+  const STEP_DELAY = 195;
+  let stepIdx = 0;
+  let trailCells = [];
+
+  function findToken(){
+    return document.querySelector(`.token[data-pi="${playerIdx}"][data-ci="${move.pieceIdx}"]`);
+  }
+
+  function highlightCell(pos){
+    const coord = cellOf(pl.color, pos);
+    if(!coord) return;
+    const cell = cellMap[coord[0]+','+coord[1]];
+    if(cell){
+      cell.classList.add('path-highlight');
+      trailCells.push(cell);
+    }
+  }
+
+  function clearTrail(){
+    trailCells.forEach(c => {
+      c.classList.remove('path-highlight');
+      c.classList.add('trail');
+    });
+    setTimeout(()=> trailCells.forEach(c => c.classList.remove('trail')), 1400);
+  }
+
+  function stepOnce(){
+    const pos = steps[stepIdx];
+    piece.pos = pos;
+    highlightCell(pos);
+
+    // Calculate pixel position and slide token there (CSS transition handles animation)
+    const coord = pixelCoord(pl.color, pos, move.pieceIdx);
+    const tokenEl = findToken();
+    if(tokenEl){
+      tokenEl.style.left = ((coord[1]+0.5)/15*100) + '%';
+      tokenEl.style.top = ((coord[0]+0.5)/15*100) + '%';
+      // Restart bounce animation on each step
+      tokenEl.classList.remove('bouncing');
+      void tokenEl.offsetWidth;
+      tokenEl.classList.add('bouncing');
+    }
+
+    sfx.step();
+    stepIdx++;
+
+    if(stepIdx < steps.length){
+      setTimeout(stepOnce, STEP_DELAY);
+    } else {
+      // Final step complete — landing sound + finish logic
+      sfx.land();
+      setTimeout(()=>{
+        clearTrail();
+        isAnimating = false;
+        finishMove(playerIdx, move, piece);
+      }, 200);
+    }
+  }
+
+  // Small initial delay before starting movement
+  setTimeout(stepOnce, 120);
+}
+
+// Burst of particles at capture location
+function spawnCaptureParticles(color, pos){
+  const coord = cellOf(color, pos);
+  if(!coord) return;
+  const layer = document.getElementById('tokenLayer');
+  if(!layer) return;
+  const burst = document.createElement('div');
+  burst.className = 'capture-burst';
+  burst.style.left = ((coord[1]+0.5)/15*100) + '%';
+  burst.style.top = ((coord[0]+0.5)/15*100) + '%';
+  const cols = ['#ff4444','#ff8844','#ffcc44','#ffffff','#ffa500'];
+  for(let i = 0; i < 14; i++){
+    const p = document.createElement('div');
+    p.className = 'capture-particle';
+    const angle = (i/14) * Math.PI * 2;
+    const dist = 14 + Math.random()*26;
+    p.style.setProperty('--px', Math.cos(angle)*dist + 'px');
+    p.style.setProperty('--py', Math.sin(angle)*dist + 'px');
+    p.style.background = cols[Math.floor(Math.random()*cols.length)];
+    p.style.animationDelay = (Math.random()*.1)+'s';
+    burst.appendChild(p);
+  }
+  layer.appendChild(burst);
+  setTimeout(()=> burst.remove(), 800);
+}
+
+function finishMove(playerIdx, move, piece){
+  const pl = state.players[playerIdx];
+  let bonus = false, captured = false;
+  let capturedPieces = [];
+
+  if(piece.pos <= 50){
+    const occ = occupantsAt(pl.color, piece.pos).filter(o=>o.playerIdx!==playerIdx);
+    if(occ.length && !isSafeCell(pl.color, piece.pos)){
+      capturedPieces = occ.slice();
+      captured = true; bonus = true;
+    } else if(occupantsAt(pl.color, piece.pos).filter(o=>o.playerIdx===playerIdx).length>1){
+      sfx.block();
+    }
+    // Safe zone glow — chime + star animation
+    if(isSafeCell(pl.color, piece.pos)){
+      sfx.safeZone();
+      const coord = cellOf(pl.color, piece.pos);
+      if(coord){
+        const cell = cellMap[coord[0]+','+coord[1]];
+        if(cell){ cell.classList.add('lit'); setTimeout(()=>cell.classList.remove('lit'), 1100); }
+      }
+    }
+  }
+
+  // ---- Capture animation: flash + particles, then send pieces back ----
+  if(captured){
+    sfx.capture();
+    renderTokens();
+    spawnCaptureParticles(pl.color, piece.pos);
+    capturedPieces.forEach(o => {
+      const ct = document.querySelector(`.token[data-pi="${o.playerIdx}"][data-ci="${o.pieceIdx}"]`);
+      if(ct) ct.classList.add('capture-flash');
+    });
+    setStatus(pl.name+' captured a piece! Extra roll.');
+    setTimeout(()=>{
+      capturedPieces.forEach(o=>{ state.players[o.playerIdx].pieces[o.pieceIdx].pos = -1; });
+      renderTokens(); renderHUD();
+      if(pl.finished){ handlePlayerFinished(); return; }
+      setTimeout(beginRoll, 500);
+    }, 600);
+    return;
+  }
+
+  // ---- Home / finish ----
+  if(piece.pos === 56){
+    sfx.home();
+    renderTokens();
+    const ht = document.querySelector(`.token[data-pi="${playerIdx}"][data-ci="${move.pieceIdx}"]`);
+    if(ht) ht.classList.add('home-glow');
+    if(pl.pieces.every(p=>p.pos===56)){ pl.finished = true; state.finishedOrder.push(playerIdx); }
+  } else if(piece.pos > 50){
+    sfx.homeEnter();
+  }
+
+  renderTokens(); renderHUD();
+
+  if(piece.pos===56 && pl.finished) setStatus(pl.name+' has finished!');
+  else if(piece.pos===56) setStatus(pl.name+' brought a piece home!');
+  else setStatus(pl.name+"'s turn.");
+
+  if(mode !== 'online'){
+    if(pl.finished){ handlePlayerFinished(); return; }
+    if(state.dice===6 || bonus) setTimeout(beginRoll, 700);
+    else setTimeout(endTurn, 700);
+  } else {
+    if(pendingOnlineState && !waitingForOnlineDice){
+      const finalRoom = pendingOnlineState;
+      pendingOnlineState = null;
+      applyOnlineRoomState(finalRoom);
+    }
+  }
+}
+
+/* ================================================================
+   SECTION 13 — TURN FLOW
+   ================================================================ */
+function beginRoll(){
+  if(state.phase==='ended') return;
+  state.phase = 'rolling';
+  positionDiceForActivePlayer();
+  renderTokens(); renderHUD();
+  const pl = activePlayer();
+  if(pl.isAI){ setStatus(pl.name+' is rolling…'); setTimeout(performRoll, 550); }
+  else{ setStatus(pl.name+", tap your die to roll."); }
+}
+function endTurn(){
+  state.consecutiveSixes = 0;
+  advanceTurnPointer();
+  renderHUD();
+  beginRoll();
+}
+function advanceTurnPointer(){
+  if(state.order.length===0) return;
+  do{ state.turnPtr = (state.turnPtr+1) % state.order.length; }
+  while(state.players[state.order[state.turnPtr]].finished && !allButOneFinished());
+}
+function allButOneFinished(){ return state.players.filter(p=>!p.finished).length <= 1; }
+
+function handlePlayerFinished(){
+  const remaining = state.players.filter(p=>!p.finished);
+  if(remaining.length<=1){
+    if(remaining.length===1) state.finishedOrder.push(state.players.indexOf(remaining[0]));
+    endGame();
+  } else {
+    showWinModal(false);
+  }
+}
+function endGame(){
+  state.phase = 'ended';
+  sfx.win();
+  launchConfetti();
+  const won = state.finishedOrder[0] === 0; // seat 0 is always the logged-in user
+  postMatchResult(won);
+  showWinModal(true);
+}
+
+/* ================================================================
+   SECTION 14 — WIN / RANKING MODAL + CONFETTI
+   ================================================================ */
+const winModal = document.getElementById('winModal');
+const rankList = document.getElementById('rankList');
+const continueBtn = document.getElementById('continueBtn');
+const winTitle = document.getElementById('winTitle');
+
+function showWinModal(isFinal){
+  rankList.innerHTML = '';
+  state.finishedOrder.forEach((pi, rank)=>{
+    const pl = state.players[pi];
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="rank-medal">${MEDALS[rank]||''}</span> ${pl.name} <span style="margin-left:auto; width:14px; height:14px; border-radius:50%; background:var(--${pl.color})"></span>`;
+    rankList.appendChild(li);
+  });
+  winTitle.textContent = isFinal ? 'Final Standings' : state.players[state.finishedOrder[state.finishedOrder.length-1]].name+' finished!';
+  if (isFinal && mode === 'online') {
+    const prizeText = document.createElement('div');
+    const amt = document.getElementById('prizeAmountDisplay').textContent;
+    prizeText.innerHTML = `<br><span style="color:#ffeb3b; font-size:1.1rem; font-weight:bold;">🏆 Winner Reward: ₹${amt} paid instantly!</span>`;
+    rankList.appendChild(prizeText);
+  }
+  continueBtn.classList.toggle('hidden', isFinal);
+  winModal.classList.remove('hidden');
+}
+continueBtn.addEventListener('click', ()=>{
+  if(mode==='online') return; // server auto-continues to the next place; this button only shows in practice mode
+  winModal.classList.add('hidden');
+  advanceTurnPointer();
+  beginRoll();
+});
+document.getElementById('newGameBtn').addEventListener('click', ()=>{
+  winModal.classList.add('hidden');
+  if(mode==='online'){
+    myRoomId = null; mySeatColor = null;
+    localStorage.removeItem('ludo_room'); localStorage.removeItem('ludo_seat');
+    showScreen('lobbyScreen');
+  }
+});
+
+const confettiCanvas = document.getElementById('confettiCanvas');
+const cctx = confettiCanvas.getContext('2d');
+function launchConfetti(){
+  confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight;
+  const colors = ['#d94a4a','#3fa66d','#e0b23a','#3f7fd9','#f0c86a'];
+  const particles = Array.from({length:140}, ()=>({
+    x: Math.random()*confettiCanvas.width, y: -20 - Math.random()*confettiCanvas.height*0.4,
+    r: 4+Math.random()*5, c: colors[Math.floor(Math.random()*colors.length)],
+    vy: 2+Math.random()*3, vx: -1.5+Math.random()*3, rot: Math.random()*360, vr: -6+Math.random()*12
+  }));
+  let frame = 0;
+  function tick(){
+    cctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+    particles.forEach(p=>{
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot*Math.PI/180);
+      cctx.fillStyle = p.c; cctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.6); cctx.restore();
+    });
+    frame++;
+    if(frame < 220) requestAnimationFrame(tick);
+    else cctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+  }
+  tick();
+}
+
+/* ================================================================
+   SECTION 15 — GAME BOOTSTRAP
+   ================================================================ */
+function startGame(seats){
+  mode = 'local';
+  state.players = seats.map((s,i)=>({
+    color:s.color,
+    name: i===0 ? currentUser.username : (s.isAI ? 'AI '+COLOR_LABEL[s.color] : 'Player '+COLOR_LABEL[s.color]),
+    isAI: s.isAI, finished:false,
+    pieces:[{pos:-1},{pos:-1},{pos:-1},{pos:-1}]
+  }));
+  state.order = state.players.map((_,i)=>i);
+  state.turnPtr = 0; state.consecutiveSixes = 0; state.finishedOrder = []; state.phase = 'setup';
+
+  buildBoard(); renderHUD(); renderTokens();
+  showScreen('gameScreen');
+  beginRoll();
+}
+
+/* ================================================================
+   SECTION 16 — HOW TO PLAY MODAL WIRING
+   ================================================================ */
+const howToModal = document.getElementById('howToModal');
+document.getElementById('howToBtn').addEventListener('click', ()=> howToModal.classList.remove('hidden'));
+document.getElementById('closeHowTo').addEventListener('click', ()=> howToModal.classList.add('hidden'));
+howToModal.addEventListener('click', e=>{ if(e.target===howToModal) howToModal.classList.add('hidden'); });
+
+/* ---- Rules Modal Wiring ---- */
+const rulesModal = document.getElementById('rulesModal');
+document.getElementById('rulesBtn').addEventListener('click', ()=> rulesModal.classList.remove('hidden'));
+document.getElementById('lobbyRulesBtn').addEventListener('click', ()=> rulesModal.classList.remove('hidden'));
+document.getElementById('closeRules').addEventListener('click', ()=> rulesModal.classList.add('hidden'));
+rulesModal.addEventListener('click', e=>{ if(e.target===rulesModal) rulesModal.classList.add('hidden'); });
+
+/* Kick things off */
+loadProfile();
+
+})();
+</script>
+</body>
+</html>

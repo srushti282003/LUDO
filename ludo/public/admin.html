@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ludo Royal Race - Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #d8ad4d;
+    --gold-bright: #f0c86a;
+    --red: #d94a4a;
+    --green: #3fa66d;
+    --blue: #3f82d9;
+    --ink: #0a0a1a;
+    --cream: #f4eee1;
+    --cream-dim: rgba(244,238,225,0.7);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  body {
+    background: #0a0a1a;
+    color: var(--cream);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Sidebar */
+  #sidebar {
+    width: 250px;
+    background: linear-gradient(180deg, #12122a, #0d0d1f);
+    border-right: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+  .brand {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--gold-bright);
+    margin-bottom: 30px;
+    padding: 0 20px;
+  }
+  .nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--cream-dim);
+    padding: 15px 25px;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.03); color: var(--cream); }
+  .nav-btn.active {
+    background: rgba(240,200,106,0.1);
+    color: var(--gold-bright);
+    border-right: 3px solid var(--gold-bright);
+  }
+  .badge {
+    background: var(--red);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+    display: none;
+  }
+  
+  /* Main Content */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  header {
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logout-btn {
+    background: rgba(217,74,74,0.15);
+    color: var(--red);
+    border: 1px solid rgba(217,74,74,0.4);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+  .logout-btn:hover { background: var(--red); color: white; }
+  
+  .pane { display: none; padding: 30px; animation: fadeIn 0.3s ease; }
+  .pane.active { display: block; }
+  
+  @keyframes fadeIn { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+  
+  /* Dashboard Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .stat-card h3 { font-size: 0.85rem; color: var(--cream-dim); margin-bottom: 10px; font-weight: 600; }
+  .stat-card .val { font-size: 1.8rem; font-weight: 800; color: var(--gold-bright); }
+  
+  /* Tables */
+  .table-container {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  th { color: var(--gold-bright); font-weight: 700; background: rgba(255,255,255,0.02); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  
+  /* Search & Forms */
+  .search-bar {
+    width: 100%; padding: 14px; border-radius: 8px; border: 1px solid rgba(240,200,106,0.3);
+    background: rgba(0,0,0,0.3); color: #fff; margin-bottom: 20px; outline: none;
+  }
+  .search-bar:focus { border-color: var(--gold-bright); }
+  
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; margin-bottom: 8px; color: var(--cream-dim); font-size: 0.85rem; }
+  .form-group input {
+    width: 100%; max-width: 400px; padding: 12px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff;
+  }
+  
+  /* Buttons */
+  .btn-sm { padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; font-size: 0.8rem; margin: 2px; }
+  .btn-green { background: rgba(63,166,109,0.15); color: var(--green); border: 1px solid rgba(63,166,109,0.4); }
+  .btn-green:hover { background: var(--green); color: white; }
+  .btn-red { background: rgba(217,74,74,0.15); color: var(--red); border: 1px solid rgba(217,74,74,0.4); }
+  .btn-red:hover { background: var(--red); color: white; }
+  .btn-blue { background: rgba(63,130,217,0.15); color: var(--blue); border: 1px solid rgba(63,130,217,0.4); }
+  .btn-blue:hover { background: var(--blue); color: white; }
+  .btn-gold { background: var(--gold-bright); color: var(--ink); padding: 12px 24px; border-radius: 8px; font-weight:bold; cursor:pointer; border:none; }
+  
+  /* Toast Notification */
+  #toast {
+    position: fixed; bottom: 20px; right: 20px; background: var(--green); color: white;
+    padding: 12px 20px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transform: translateY(100px); opacity: 0; transition: 0.3s; z-index: 1000;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="brand">⚡ Ludo Admin</div>
+  <button class="nav-btn active" onclick="switchTab('overview')">📊 Overview</button>
+  <button class="nav-btn" onclick="switchTab('users')">👥 Users & Wallets</button>
+  <button class="nav-btn" onclick="switchTab('deposits')">💰 Deposits <span id="badge-deposits" class="badge">0</span></button>
+  <button class="nav-btn" onclick="switchTab('withdrawals')">🏦 Withdrawals <span id="badge-withdrawals" class="badge">0</span></button>
+  <button class="nav-btn" onclick="switchTab('slots')">🎰 Slots</button>
+  <button class="nav-btn" onclick="switchTab('matches')">🏆 Matches</button>
+  <button class="nav-btn" onclick="switchTab('settings')">⚙️ System</button>
+</div>
+
+<div id="main">
+  <header>
+    <div>Welcome, <span id="adminName" style="color:var(--gold-bright); font-weight:bold;">Admin</span></div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </header>
+  
+  <!-- OVERVIEW -->
+  <div id="pane-overview" class="pane active">
+    <h2 style="margin-bottom:20px; color:var(--gold-bright);">Platform Overview</h2>
+    <div class="stats-grid" id="statsContainer">Loading...</div>
+  </div>
+
+  <!-- USERS -->
+  <div id="pane-users" class="pane">
+    <h2 style="margin-bottom:20px; color:var(--gold-bright);">Users & Wallets</h2>
+    <input type="text" id="searchUserInput" class="search-bar" placeholder="🔍 Search by username or phone..." onkeyup="loadUsers()">
+    <div class="table-container">
+      <table>
+        <thead><tr><th>User</th><th>Balance</th><th>Actions</th><th>Wallet</th></tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DEPOSITS -->
+  <div id="pane-deposits" class="pane">
+    <h2 style="margin-bottom:20px; color:var(--gold-bright);">Pending Deposits</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>User</th><th>Amount</th><th>Proof</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody id="depositsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WITHDRAWALS -->
+  <div id="pane-withdrawals" class="pane">
+    <h2 style="margin-bottom:20px; color:var(--gold-bright);">Withdrawal Requests</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>User</th><th>Amount</th><th>Current Bal</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="withdrawalsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SLOTS -->
+  <div id="pane-slots" class="pane">
+    <h2 style="margin-bottom:20px; color:var(--gold-bright);">Game Slots</h2>
+    <div id="slotsContainer"></div>
+    <button class="btn-sm btn-blue" onclick="addSlotUI()" style="margin:20px 0; padding:10px;">+ Add New Slot</button>
+    <button class="btn-gold" onclick="saveSettings()" style="display:block;">💾 Save & Sync Settings</button>
+  </div>
+
+  <!-- MATCHES -->
+  <div id="pane-matches" class="pane">
+    <h2 style="margin-bottom:20px; color:var(--gold-bright);">Recent Matches</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Date</th><th>Winner</th><th>Prize</th><th>Players</th></tr></thead>
+        <tbody id="matchesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="pane-settings" class="pane">
+    <h2 style="margin-bottom:20px; color:var(--gold-bright);">System Settings</h2>
+    <form id="settingsForm" onsubmit="event.preventDefault(); saveSettings();">
+      <div class="form-group">
+        <label>WhatsApp Number</label>
+        <input type="text" id="setWhatsapp">
+      </div>
+      <div class="form-group">
+        <label>UPI Details</label>
+        <input type="text" id="setUpi">
+      </div>
+      <div class="form-group">
+        <label>Platform Fee (%)</label>
+        <input type="number" id="setPlatformFee" min="0" max="100">
+      </div>
+      <div class="form-group">
+        <label>Turn Timer (s)</label>
+        <input type="number" id="setTurnTimer" min="5" max="60">
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="setAiEnabled"> Enable AI Bots</label>
+      </div>
+      <div class="form-group">
+        <label>Deposit QR Image</label>
+        <input type="file" id="setQrImage" accept="image/*">
+        <div id="qrPreview" style="margin-top:10px;"></div>
+      </div>
+      <button class="btn-gold" type="submit">💾 Save & Sync Settings</button>
+    </form>
+  </div>
+</div>
+
+<div id="toast">Update received</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const token = localStorage.getItem('ludo_token');
+if(!token) window.location.href = 'login.html';
+
+let socket;
+let currentTab = 'overview';
+let appSettings = {};
+
+// Auth Check
+fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.user || (data.user.username !== 'ABmin9876' && data.user.username.toLowerCase() !== 'admin')) {
+      window.location.href = 'index.html';
+    } else {
+      document.getElementById('adminName').textContent = data.user.username;
+      initSocket();
+      switchTab('overview');
+      loadSettings();
+    }
+  }).catch(() => window.location.href = 'login.html');
+
+function logout() {
+  localStorage.removeItem('ludo_token');
+  window.location.href = 'login.html';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Setup Real-time Sync
+function initSocket() {
+  socket = io({ auth: { token } });
+  
+  socket.on('admin:deposit_request', () => {
+    showToast('New Deposit Request!');
+    if(currentTab === 'overview') loadOverview();
+    if(currentTab === 'deposits') loadDeposits();
+  });
+  
+  socket.on('admin:withdrawal_request', () => {
+    showToast('New Withdrawal Request!');
+    if(currentTab === 'overview') loadOverview();
+    if(currentTab === 'withdrawals') loadWithdrawals();
+  });
+  
+  socket.on('wallet:update', () => {
+    if(currentTab === 'users') loadUsers();
+    if(currentTab === 'overview') loadOverview();
+  });
+}
+
+function switchTab(tabId) {
+  currentTab = tabId;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  
+  document.querySelector(`.nav-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+  document.getElementById(`pane-${tabId}`).classList.add('active');
+  
+  if(tabId === 'overview') loadOverview();
+  if(tabId === 'users') loadUsers();
+  if(tabId === 'deposits') loadDeposits();
+  if(tabId === 'withdrawals') loadWithdrawals();
+  if(tabId === 'slots' || tabId === 'settings') loadSettings();
+  if(tabId === 'matches') loadMatches();
+}
+
+async function apiCall(endpoint, method='GET', body=null, isFormData=false) {
+  const options = { method, headers: { Authorization: 'Bearer ' + token } };
+  if(body) {
+    if(isFormData) { options.body = body; }
+    else { options.headers['Content-Type'] = 'application/json'; options.body = JSON.stringify(body); }
+  }
+  const res = await fetch('/api/admin' + endpoint, options);
+  if(!res.ok) {
+    const err = await res.json();
+    alert(err.error || 'API Error');
+    throw new Error(err.error);
+  }
+  return res.json();
+}
+
+async function loadOverview() {
+  const stats = await apiCall('/stats');
+  document.getElementById('statsContainer').innerHTML = `
+    <div class="stat-card"><h3>Total Users</h3><div class="val">${stats.totalUsers}</div></div>
+    <div class="stat-card"><h3>Online Users</h3><div class="val" style="color:var(--green)">${stats.onlineUsers}</div></div>
+    <div class="stat-card"><h3>Running Rooms</h3><div class="val">${stats.runningRooms}</div></div>
+    <div class="stat-card"><h3>Platform Revenue</h3><div class="val">₹${stats.platformEarnings}</div></div>
+    <div class="stat-card"><h3>Pending Deposits</h3><div class="val" style="color:var(--red)">${stats.pendingDeposits}</div></div>
+    <div class="stat-card"><h3>Pending Withdraws</h3><div class="val" style="color:var(--red)">${stats.pendingWithdrawals}</div></div>
+  `;
+  
+  const depBadge = document.getElementById('badge-deposits');
+  if(stats.pendingDeposits > 0) { depBadge.textContent = stats.pendingDeposits; depBadge.style.display = 'inline-block'; }
+  else { depBadge.style.display = 'none'; }
+  
+  const withBadge = document.getElementById('badge-withdrawals');
+  if(stats.pendingWithdrawals > 0) { withBadge.textContent = stats.pendingWithdrawals; withBadge.style.display = 'inline-block'; }
+  else { withBadge.style.display = 'none'; }
+}
+
+async function loadUsers() {
+  const q = document.getElementById('searchUserInput').value;
+  const users = await apiCall('/users?search=' + encodeURIComponent(q));
+  const tbody = document.getElementById('usersBody');
+  tbody.innerHTML = '';
+  users.forEach(u => {
+    const isBanned = u.accountStatus === 'banned';
+    tbody.innerHTML += `
+      <tr>
+        <td><b>${u.username}</b> <span style="color:${u.isOnline?'var(--green)':'gray'}">●</span><br><small>${u.phoneNumber||''}</small></td>
+        <td style="color:var(--gold-bright); font-weight:bold;">₹${u.walletBalance}</td>
+        <td>
+          <button class="btn-sm btn-blue" onclick="toggleRig('${u._id}', ${!u.isRigged})">${u.isRigged?'Unrig':'Rig'}</button>
+          ${isBanned ? `<button class="btn-sm btn-green" onclick="updateUserStatus('${u._id}','active')">Unban</button>` : `<button class="btn-sm btn-red" onclick="updateUserStatus('${u._id}','banned')">Ban</button>`}
+        </td>
+        <td>
+          <button class="btn-sm btn-green" onclick="modBalance('${u._id}', 'add')">+ Add</button>
+          <button class="btn-sm btn-red" onclick="modBalance('${u._id}', 'deduct')">- Deduct</button>
+          <button class="btn-sm btn-blue" onclick="modBalance('${u._id}', 'set')">= Set</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+async function modBalance(id, action) {
+  const amt = prompt(`Amount to ${action}:`);
+  if(!amt || isNaN(amt) || amt < 0) return;
+  await apiCall(`/user/${id}/balance`, 'POST', { action, amount: Number(amt) });
+  showToast('Balance updated & pushed to user!');
+  loadUsers();
+}
+
+async function toggleRig(id, isRigged) {
+  await apiCall(`/user/${id}/rig`, 'POST', { isRigged });
+  loadUsers();
+}
+
+async function updateUserStatus(id, status) {
+  await apiCall(`/user/${id}/status`, 'POST', { status });
+  loadUsers();
+}
+
+async function loadDeposits() {
+  const deps = await apiCall('/transactions/pending');
+  const tbody = document.getElementById('depositsBody');
+  tbody.innerHTML = '';
+  deps.forEach(d => {
+    if(d.type!=='deposit') return;
+    tbody.innerHTML += `
+      <tr>
+        <td>${d.userId?.username||'N/A'}<br><small>${d.userId?.phoneNumber||''}</small></td>
+        <td style="color:var(--green)">₹${d.amount}</td>
+        <td>${d.referenceId ? `<a href="${d.referenceId}" target="_blank" style="color:var(--blue)">View</a>` : ''}</td>
+        <td>${new Date(d.createdAt).toLocaleString()}</td>
+        <td>
+          <button class="btn-sm btn-green" onclick="processTx('${d._id}','approve')">Approve</button>
+          <button class="btn-sm btn-red" onclick="processTx('${d._id}','reject')">Reject</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+async function loadWithdrawals() {
+  const withs = await apiCall('/withdrawals');
+  const tbody = document.getElementById('withdrawalsBody');
+  tbody.innerHTML = '';
+  withs.forEach(w => {
+    const isPend = w.status === 'pending';
+    tbody.innerHTML += `
+      <tr>
+        <td>${w.userId?.username||'N/A'}<br><small>${w.userId?.phoneNumber||''}</small></td>
+        <td style="color:var(--gold-bright)">₹${w.amount}</td>
+        <td>₹${w.userId?.walletBalance||0}</td>
+        <td>${w.status.toUpperCase()}</td>
+        <td>
+          ${isPend ? `
+            <button class="btn-sm btn-green" onclick="processTx('${w._id}','approve')">Complete</button>
+            <button class="btn-sm btn-red" onclick="processTx('${w._id}','reject')">Reject</button>
+          ` : '-'}
+        </td>
+      </tr>
+    `;
+  });
+}
+
+async function processTx(id, action) {
+  await apiCall(`/transaction/${id}/${action}`, 'POST');
+  showToast(`Transaction ${action}d!`);
+  loadDeposits(); loadWithdrawals(); loadOverview();
+}
+
+async function loadMatches() {
+  const matches = await apiCall('/matches');
+  const tbody = document.getElementById('matchesBody');
+  tbody.innerHTML = '';
+  matches.forEach(m => {
+    tbody.innerHTML += `
+      <tr>
+        <td><small>${m._id}</small><br>${new Date(m.playedAt).toLocaleString()}</td>
+        <td style="color:var(--gold-bright)">${m.winner?.username||'N/A'}</td>
+        <td style="color:var(--green)">₹${m.winningAmount||0}</td>
+        <td>${m.players.map(p=>p.username).join(', ')}</td>
+      </tr>
+    `;
+  });
+}
+
+async function loadSettings() {
+  appSettings = await (await fetch('/api/settings')).json();
+  
+  // Fill Settings form
+  document.getElementById('setWhatsapp').value = appSettings.whatsappNumber || '';
+  document.getElementById('setUpi').value = appSettings.upiDetails || '';
+  document.getElementById('setPlatformFee').value = appSettings.platformFeePercentage ?? 5;
+  document.getElementById('setTurnTimer').value = appSettings.turnTimerSeconds ?? 20;
+  document.getElementById('setAiEnabled').checked = appSettings.aiEnabled ?? true;
+  if(appSettings.qrImage) {
+    document.getElementById('qrPreview').innerHTML = `<img src="${appSettings.qrImage}" style="max-height:80px; border-radius:8px;">`;
+  }
+  
+  // Render Slots
+  const sc = document.getElementById('slotsContainer');
+  sc.innerHTML = '';
+  if(appSettings.entryFeeSlots) {
+    appSettings.entryFeeSlots.forEach(slot => {
+      const div = document.createElement('div');
+      div.style = "display:flex; gap:10px; margin-bottom:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; align-items:center;";
+      
+      const p2 = (slot.allowedModes||[]).includes('2-player') ? 'checked' : '';
+      const p3 = (slot.allowedModes||[]).includes('3-player') ? 'checked' : '';
+      const p4 = (slot.allowedModes||[]).includes('4-player') ? 'checked' : '';
+      
+      div.innerHTML = `
+        <input type="number" class="slot-amt" value="${slot.amount}" style="width:100px; padding:8px; border-radius:4px; border:none; background:rgba(0,0,0,0.3); color:#fff;" placeholder="Amt">
+        <select class="slot-en" style="padding:8px; border-radius:4px; border:none; background:rgba(0,0,0,0.3); color:#fff;">
+          <option value="true" ${slot.isEnabled?'selected':''}>Enabled</option>
+          <option value="false" ${!slot.isEnabled?'selected':''}>Disabled</option>
+        </select>
+        <div style="display:flex; gap:10px; margin-left:10px; font-size:0.8rem;">
+          <label><input type="checkbox" class="mode-p2" ${p2}> 2P</label>
+          <label><input type="checkbox" class="mode-p3" ${p3}> 3P</label>
+          <label><input type="checkbox" class="mode-p4" ${p4}> 4P</label>
+        </div>
+        <button class="btn-sm btn-red" style="margin-left:auto;" onclick="this.parentElement.remove()">Del</button>
+      `;
+      sc.appendChild(div);
+    });
+  }
+}
+
+function addSlotUI() {
+  const sc = document.getElementById('slotsContainer');
+  const div = document.createElement('div');
+  div.style = "display:flex; gap:10px; margin-bottom:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; align-items:center;";
+  div.innerHTML = `
+    <input type="number" class="slot-amt" value="50" style="width:100px; padding:8px; border-radius:4px; border:none; background:rgba(0,0,0,0.3); color:#fff;" placeholder="Amt">
+    <select class="slot-en" style="padding:8px; border-radius:4px; border:none; background:rgba(0,0,0,0.3); color:#fff;">
+      <option value="true" selected>Enabled</option>
+      <option value="false">Disabled</option>
+    </select>
+    <div style="display:flex; gap:10px; margin-left:10px; font-size:0.8rem;">
+      <label><input type="checkbox" class="mode-p2" checked> 2P</label>
+      <label><input type="checkbox" class="mode-p3"> 3P</label>
+      <label><input type="checkbox" class="mode-p4"> 4P</label>
+    </div>
+    <button class="btn-sm btn-red" style="margin-left:auto;" onclick="this.parentElement.remove()">Del</button>
+  `;
+  sc.appendChild(div);
+}
+
+async function saveSettings() {
+  const fd = new FormData();
+  fd.append('whatsappNumber', document.getElementById('setWhatsapp').value);
+  fd.append('upiDetails', document.getElementById('setUpi').value);
+  fd.append('platformFeePercentage', document.getElementById('setPlatformFee').value);
+  fd.append('turnTimerSeconds', document.getElementById('setTurnTimer').value);
+  fd.append('aiEnabled', document.getElementById('setAiEnabled').checked);
+  
+  const qrInput = document.getElementById('setQrImage');
+  if(qrInput.files[0]) fd.append('qrImage', qrInput.files[0]);
+  
+  const slots = [];
+  document.querySelectorAll('#slotsContainer > div').forEach(div => {
+    const modes = [];
+    if(div.querySelector('.mode-p2').checked) modes.push('2-player');
+    if(div.querySelector('.mode-p3').checked) modes.push('3-player');
+    if(div.querySelector('.mode-p4').checked) modes.push('4-player');
+    slots.push({
+      amount: Number(div.querySelector('.slot-amt').value),
+      isEnabled: div.querySelector('.slot-en').value === 'true',
+      allowedModes: modes
+    });
+  });
+  fd.append('entryFeeSlots', JSON.stringify(slots));
+  
+  await apiCall('/settings', 'PUT', fd, true);
+  showToast('Settings Saved & Synced to all players!');
+  loadSettings();
+}
+
+// Global Poll for Overview (updates badges)
+setInterval(() => { if(currentTab !== 'overview') loadOverview(); }, 15000);
+</script>
+</body>
+</html>

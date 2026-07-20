@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register · Ludo Royal Race</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+  <div class="auth-card">
+    <div class="auth-brand"><span class="dice-emoji">🎲</span><h1>Ludo Royal Race</h1></div>
+    <p class="auth-sub">Create your account — unlimited players welcome.</p>
+
+    <form id="registerForm">
+      <label for="username">Username</label>
+      <input type="text" id="username" minlength="3" maxlength="20" autocomplete="username" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="email" required>
+
+      <label for="phoneNumber">Phone Number (WhatsApp for Withdrawals)</label>
+      <input type="tel" id="phoneNumber" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" minlength="6" autocomplete="new-password" required>
+
+      <label>Favorite Piece Color</label>
+      <div class="color-pick-row" id="colorRow">
+        <div class="color-swatch selected" data-color="red" style="background:var(--red)"></div>
+        <div class="color-swatch" data-color="green" style="background:var(--green)"></div>
+        <div class="color-swatch" data-color="yellow" style="background:var(--yellow)"></div>
+        <div class="color-swatch" data-color="blue" style="background:var(--blue)"></div>
+      </div>
+
+      <div class="form-error" id="formError"></div>
+      <button class="primary-btn" type="submit" id="submitBtn">Create Account ▶</button>
+    </form>
+
+    <div class="switch-line">Already registered? <a href="login.html">Log in</a></div>
+  </div>
+
+<script>
+if(localStorage.getItem('ludo_token')) window.location.href = 'index.html';
+
+let favoriteColor = 'red';
+document.getElementById('colorRow').addEventListener('click', e=>{
+  const sw = e.target.closest('.color-swatch'); if(!sw) return;
+  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+  sw.classList.add('selected');
+  favoriteColor = sw.dataset.color;
+});
+
+const form = document.getElementById('registerForm');
+const errBox = document.getElementById('formError');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  errBox.classList.remove('show');
+  submitBtn.disabled = true; submitBtn.textContent = 'Creating…';
+
+  try{
+    const res = await fetch('/api/auth/register', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phoneNumber: document.getElementById('phoneNumber').value.trim(),
+        password: document.getElementById('password').value,
+        favoriteColor
+      })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Registration failed.');
+
+    localStorage.setItem('ludo_token', data.token);
+    localStorage.setItem('ludo_user', JSON.stringify(data.user));
+    window.location.href = 'index.html';
+  }catch(err){
+    errBox.textContent = err.message + (err.message.includes('fetch') ? ' — is the server running?' : '');
+    errBox.classList.add('show');
+    submitBtn.disabled = false; submitBtn.textContent = 'Create Account ▶';
+  }
+});
+</script>
+</body>
+</html>

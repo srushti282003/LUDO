@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In · Ludo Royal Race</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+  <div class="auth-card">
+    <div class="auth-brand"><span class="dice-emoji">🎲</span><h1>Ludo Royal Race</h1></div>
+    <p class="auth-sub">Welcome back — log in to keep your streak going.</p>
+
+    <form id="loginForm">
+      <label for="identifier">Username or Email</label>
+      <input type="text" id="identifier" autocomplete="username" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+
+      <div class="form-error" id="formError"></div>
+      <button class="primary-btn" type="submit" id="submitBtn">Log In ▶</button>
+    </form>
+
+    <div class="switch-line">New here? <a href="register.html">Create an account</a></div>
+  </div>
+
+<script>
+// If already logged in, skip straight to the game.
+if(localStorage.getItem('ludo_token')) window.location.href = 'index.html';
+
+const form = document.getElementById('loginForm');
+const errBox = document.getElementById('formError');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  errBox.classList.remove('show');
+  submitBtn.disabled = true; submitBtn.textContent = 'Logging in…';
+
+  try{
+    const res = await fetch('/api/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        identifier: document.getElementById('identifier').value.trim(),
+        password: document.getElementById('password').value
+      })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Login failed.');
+
+    localStorage.setItem('ludo_token', data.token);
+    localStorage.setItem('ludo_user', JSON.stringify(data.user));
+    window.location.href = 'index.html';
+  }catch(err){
+    errBox.textContent = err.message + (err.message.includes('fetch') ? ' — is the server running?' : '');
+    errBox.classList.add('show');
+    submitBtn.disabled = false; submitBtn.textContent = 'Log In ▶';
+  }
+});
+</script>
+</body>
+</html>
