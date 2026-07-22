@@ -292,6 +292,7 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+const token = localStorage.getItem('ludo_token') || '';
 let socket;
 let currentTab = 'overview';
 let appSettings = {};

@@ -24,8 +24,9 @@ async function requireAdmin(req, res, next) {
 }
 
 // Ensure all routes require auth and admin
-router.use(requireAuth);
-router.use(requireAdmin);
+// DISABLED per user request for direct access without login
+// router.use(requireAuth);
+// router.use(requireAdmin);
 
 // ---------------------------------------------------------
 // Dashboard Stats
