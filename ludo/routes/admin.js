@@ -8,7 +8,8 @@ const multer = require('multer');
 const path = require('path');
 
 const router = express.Router();
-const upload = multer({ dest: path.join(__dirname, '../public/uploads/') });
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // Middleware to ensure user is admin.
 async function requireAdmin(req, res, next) {
@@ -94,7 +95,8 @@ router.put('/settings', upload.single('qrImage'), async (req, res) => {
     }
     
     if (req.file) {
-      settings.qrImage = '/uploads/' + req.file.filename;
+      const base64Image = req.file.buffer.toString('base64');
+      settings.qrImage = `data:${req.file.mimetype};base64,${base64Image}`;
     }
     
     await settings.save();
