@@ -165,6 +165,16 @@
     transform: translateY(100px); opacity: 0; transition: 0.3s; z-index: 1000;
   }
   #toast.show { transform: translateY(0); opacity: 1; }
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; overflow-x: auto; white-space: nowrap; flex-direction: row; }
+    .brand { margin-bottom: 10px; font-size: 1rem; }
+    .nav-btn { display: inline-block; padding: 10px 15px; border-left: none; border-bottom: 2px solid transparent; }
+    .nav-btn.active { border-left: none; border-bottom: 2px solid var(--gold-bright); background: rgba(240,200,106,0.1); }
+    #main { padding: 15px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .table-container { overflow-x: auto; }
+  }
 </style>
 </head>
 <body>
@@ -282,26 +292,15 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const token = localStorage.getItem('ludo_token');
-if(!token) window.location.href = 'login.html';
-
 let socket;
 let currentTab = 'overview';
 let appSettings = {};
 
-// Auth Check
-fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
-  .then(res => res.json())
-  .then(data => {
-    if (!data.user || (data.user.username !== 'ABmin9876' && data.user.username.toLowerCase() !== 'admin')) {
-      window.location.href = 'index.html';
-    } else {
-      document.getElementById('adminName').textContent = data.user.username;
-      initSocket();
-      switchTab('overview');
-      loadSettings();
-    }
-  }).catch(() => window.location.href = 'login.html');
+// No Auth Check required - opening directly
+document.getElementById('adminName').textContent = 'Admin';
+initSocket();
+switchTab('overview');
+loadSettings();
 
 function logout() {
   localStorage.removeItem('ludo_token');
@@ -317,7 +316,7 @@ function showToast(msg) {
 
 // Setup Real-time Sync
 function initSocket() {
-  socket = io({ auth: { token } });
+  socket = io();
   
   socket.on('admin:deposit_request', () => {
     showToast('New Deposit Request!');
