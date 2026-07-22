@@ -53,24 +53,13 @@ function processQueues(io) {
     const playerType = parts[2] || 'normal'; // 'admin' | 'rigged' | 'normal'
 
     const oldestWait = Date.now() - q[0].joinedAt;
-    const isFull = q.length >= size;
-
-    if (playerType === 'normal') {
-      // Normal: always reserve at least 1 seat for AI. Fill rest with AI after timeout.
-      const maxHumans = size - 1;
-      const timedOut = oldestWait >= AUTO_FILL_MS;
-      if (q.length >= maxHumans || timedOut) {
-        const taken = q.splice(0, maxHumans);
-        createRoomFromQueue(io, size, entryFee, taken);
-      }
-    } else {
-      // Admin/Rigged: NEVER fill with AI — only start when there are enough real humans
-      if (isFull) {
-        const taken = q.splice(0, size);
-        createRoomFromQueue(io, size, entryFee, taken);
-      }
-      // If waiting for a very long time (5 min), match with whatever humans are in the normal queue
-      // but NEVER inject AI
+    
+    // Always reserve at least 1 seat for AI. Fill rest with AI after timeout.
+    const maxHumans = size - 1;
+    const timedOut = oldestWait >= AUTO_FILL_MS;
+    if (q.length >= maxHumans || timedOut) {
+      const taken = q.splice(0, maxHumans);
+      createRoomFromQueue(io, size, entryFee, taken);
     }
   });
 }
@@ -237,14 +226,14 @@ function executeRoll(io, room, isAuto) {
   const seat = room.seats[playerIdx];
   
   let result;
-  if (seat.isAdmin || seat.isRigged) {
+  if (seat.isRigged) {
     result = engine.calculateRiggedRoll(room.players, playerIdx);
   } else {
     let safe = false;
     let attempts = 0;
     while (!safe && attempts < 10) {
       result = engine.rollDie();
-      const riggedIndices = room.seats.map((s, i) => (s.isAdmin || s.isRigged) ? i : -1).filter(i => i !== -1);
+      const riggedIndices = room.seats.map((s, i) => s.isRigged ? i : -1).filter(i => i !== -1);
       safe = engine.isSafeRoll(room.players, playerIdx, riggedIndices, result);
       attempts++;
     }
